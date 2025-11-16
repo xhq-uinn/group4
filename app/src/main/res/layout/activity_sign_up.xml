@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SIGN UP"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Role selection -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Role:"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/roleGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/roleParent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Parent" />
+
+            <RadioButton
+                android:id="@+id/roleChild"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Child"
+                android:layout_marginStart="16dp" />
+
+            <RadioButton
+                android:id="@+id/roleProvider"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Provider"
+                android:layout_marginStart="16dp" />
+        </RadioGroup>
+
+        <!-- Email -->
+        <EditText
+            android:id="@+id/emailField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Password -->
+        <EditText
+            android:id="@+id/passwordField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Password"
+            android:inputType="text"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Child info (only visible for Parent or Child) -->
+        <LinearLayout
+            android:id="@+id/childFields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/childNameField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Child Name"
+                android:layout_marginBottom="12dp" />
+
+            <EditText
+                android:id="@+id/childAgeField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Child Age"
+                android:inputType="number"
+                android:layout_marginBottom="16dp" />
+        </LinearLayout>
+
+        <!-- Register button -->
+        <Button
+            android:id="@+id/registerButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="REGISTER"
+            android:textAllCaps="false"
+            android:textSize="18sp"
+            android:backgroundTint="#3F51B5"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+</ScrollView>
