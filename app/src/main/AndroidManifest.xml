@@ -20,6 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".ParentHomeActivity" />
+        <activity android:name=".AddChildActivity" />
+        <activity android:name=".ChildShareSettingsActivity" />
     </application>
 
 </manifest>

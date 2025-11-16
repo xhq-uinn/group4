@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- 孩子姓名 -->
+        <EditText
+            android:id="@+id/editChildName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Name"/>
+
+        <!-- 出生日期 -->
+        <EditText
+            android:id="@+id/editChildDOB"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="DOB (YYYY-MM-DD)"
+            android:inputType="date"/>
+
+        <!-- 备注 -->
+        <EditText
+            android:id="@+id/editChildNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="optional notes"/>
+
+        <!-- 保存按钮 -->
+        <Button
+            android:id="@+id/saveChildButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save"/>
+    </LinearLayout>
+</ScrollView>
