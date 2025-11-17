@@ -1,45 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="10dp"
-    app:cardElevation="4dp"
-    app:cardCornerRadius="12dp"
-    android:foreground="?attr/selectableItemBackground">
+    android:padding="12dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- Child Name -->
+    <TextView
+        android:id="@+id/textChildName"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="15dp">
+        android:text="Child Name"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_edit_child"
+        app:layout_constraintBottom_toTopOf="@id/textChildDOB"
+        android:ellipsize="end"
+        android:singleLine="true"/>
 
-        <TextView
-            android:id="@+id/textChildName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Child Name"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#000000" />
+    <!-- Child DOB -->
+    <TextView
+        android:id="@+id/textChildDOB"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="YYYY-MM-DD"
+        android:textSize="14sp"
+        android:textColor="#555555"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textChildName"
+        app:layout_constraintEnd_toStartOf="@id/btn_edit_child"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
-        <TextView
-            android:id="@+id/textChildDOB"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DOB"
-            android:textSize="16sp"
-            android:textColor="#555555"
-            android:layout_marginTop="4dp"/>
+    <!-- Edit Button -->
+    <Button
+        android:id="@+id/btn_edit_child"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Edit"
+        app:layout_constraintEnd_toStartOf="@id/btn_delete_child"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
-        <Button
-            android:id="@+id/btn_share_settings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sharing Settings"
-            android:layout_marginTop="14dp"/>
-    </LinearLayout>
+    <!-- Delete Button -->
+    <Button
+        android:id="@+id/btn_delete_child"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Delete"
+        app:layout_constraintEnd_toStartOf="@id/btn_share_settings"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="4dp"/>
 
-</androidx.cardview.widget.CardView>
+    <!-- Share Settings Button -->
+    <Button
+        android:id="@+id/btn_share_settings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="4dp"/>
 
+</androidx.constraintlayout.widget.ConstraintLayout>

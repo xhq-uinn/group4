@@ -7,7 +7,7 @@ public class Child {
     private String note;
 
     public Child() {
-        // Firestore 需要空构造函数
+
     }
 
     public Child(String id, String name, String dob, String note) {
