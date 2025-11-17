@@ -18,7 +18,7 @@
             android:name=".ChildMainActivity"
             android:exported="false" />
         <activity
-            android:name=".ParentMainActivity"
+            android:name=".ParentHomeActivity"
             android:exported="false" />
         <activity
             android:name=".OnboardingActivity"
@@ -39,6 +39,15 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
+
+        <activity
+            android:name=".AddChildActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ChildShareSettingsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

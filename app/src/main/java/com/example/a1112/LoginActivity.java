@@ -61,18 +61,52 @@ public class LoginActivity extends AppCompatActivity {
 
                     String uid = user.getUid();
 
+
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Toast.makeText(this, "User data missing", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     // Check if onboarding is completed
-                    db.collection("users").document(uid).get()
-                            .addOnSuccessListener(doc -> {
-                                if (doc.exists() && Boolean.TRUE.equals(doc.getBoolean("hasCompletedOnboarding"))) {
-                                    startActivity(new Intent(this, MainActivity.class));
-                                } else {
-                                    startActivity(new Intent(this, OnboardingActivity.class));
-                                }
-                                finish();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Error loading user data", Toast.LENGTH_SHORT).show());
-                });
+                    Boolean hasCompleted = doc.getBoolean("hasCompletedOnboarding");
+                    if (hasCompleted == null || !hasCompleted) {
+                        // not completed: OnboardingActivity
+                        startActivity(new Intent(this, OnboardingActivity.class));
+                        finish();
+                        return;
+                    }
+
+                    // completed: go to role-home
+                    String role = doc.getString("role");
+                    if (role == null) {
+                        Toast.makeText(this, "No role found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Intent intent;
+                    switch (role) {
+                        case "Parent":
+                            intent = new Intent(this, ParentHomeActivity.class);
+                            break;
+                        case "Child":
+                            intent = new Intent(this, ChildMainActivity.class);
+                            break;
+                        case "Provider":
+                            intent = new Intent(this, ProviderMainActivity.class);
+                            break;
+                        default:
+                            Toast.makeText(this, "Unknown role", Toast.LENGTH_SHORT).show();
+                            return;
+                    }
+
+                    startActivity(intent);
+                    finish();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error loading user data", Toast.LENGTH_SHORT).show());
+
+    });
     }
 }
