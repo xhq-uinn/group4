@@ -30,17 +30,64 @@ public class OnboardingActivity extends AppCompatActivity {
     private void completeOnboarding() {
         String uid = auth.getCurrentUser().getUid();
 
-        // 在 Firestore 中标记 onboarding 已完成
+        // in Firestore mark onboarding complete
         db.collection("users").document(uid)
                 .update("hasCompletedOnboarding", true)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Setup complete!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Setup complete", Toast.LENGTH_SHORT).show();
 
-                    // 跳转主界面（可统一跳 MainActivity，或根据角色跳不同界面）
-                    startActivity(new Intent(this, MainActivity.class));
+                    // go to home according to roles
+                    goToRoleHome(uid);
                     finish();
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to update onboarding: " + e.getMessage(), Toast.LENGTH_LONG).show());
+    }
+    private void goToRoleHome(String uid) {
+        db.collection("users").document(uid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Toast.makeText(this, "User data missing", Toast.LENGTH_SHORT).show();
+                        // back to sign in
+                        startActivity(new Intent(this, LoginActivity.class));
+                        finish();
+                        return;
+                    }
+
+                    String role = doc.getString("role");
+                    if (role == null) {
+                        Toast.makeText(this, "No role found", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(this, LoginActivity.class));
+                        finish();
+                        return;
+                    }
+
+                    Intent intent;
+                    switch (role) {
+                        case "Parent":
+                            intent = new Intent(this, ParentHomeActivity.class);
+                            break;
+                        case "Child":
+                            intent = new Intent(this, ChildMainActivity.class);
+                            break;
+                        case "Provider":
+                            intent = new Intent(this, ProviderMainActivity.class);
+                            break;
+                        default:
+                            Toast.makeText(this, "Unknown role", Toast.LENGTH_SHORT).show();
+
+                            intent = new Intent(this, LoginActivity.class);
+                            break;
+                    }
+
+                    startActivity(intent);
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to load role, going back to login", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, LoginActivity.class));
+                finish();
+        });
     }
 }

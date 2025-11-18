@@ -24,13 +24,13 @@ public class AddChildActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_child);
 
-        // 绑定控件
+        // button binding
         nameEdit = findViewById(R.id.editChildName);
         dobEdit = findViewById(R.id.editChildDOB);
         noteEdit = findViewById(R.id.editChildNote);
         saveButton = findViewById(R.id.saveChildButton);
 
-        // 初始化 Firebase
+        // initialize Firebase
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
 
@@ -59,14 +59,14 @@ public class AddChildActivity extends AppCompatActivity {
         childData.put("dob", dob);
         childData.put("note", note);
 
-        // 保存到 Firestore
+        // save to Firestore
         db.collection("parents")
                 .document(parentUid)
                 .collection("children")
                 .add(childData)
                 .addOnSuccessListener(documentReference -> {
                     Toast.makeText(AddChildActivity.this, "Child information has been saved", Toast.LENGTH_SHORT).show();
-                    finish(); // 返回上一个页面
+                    finish(); // return to previous page
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(AddChildActivity.this, "Failure to be saved: " + e.getMessage(), Toast.LENGTH_SHORT).show();

@@ -46,33 +46,33 @@ public class ParentHomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_parent_home);
 
-        // ====== Firebase ======
+        // Firebase
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
         FirebaseUser user = auth.getCurrentUser();
 
 
-        // ====== UI connect ======
+        // UI connect
         buttonAddChild = findViewById(R.id.btn_add_child);
         buttonInviteProvider = findViewById(R.id.btn_invite_provider);
         childrenRecyclerView = findViewById(R.id.recycler_children);
         buttonSignOut = findViewById(R.id.btn_signout);
 
-        // ====== Recycler setup ======
+        // Recycler setup
         childrenRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         childAdapter = new ChildAdapter(childList);
         childrenRecyclerView.setAdapter(childAdapter);
 
-        // ====== Load children ======
-        loadChildren();
+        // Load children
+//        loadChildren();
 
-        // ====== Add child button ======
+        // Add child button
         buttonAddChild.setOnClickListener(v -> {
             Intent intent = new Intent(ParentHomeActivity.this, AddChildActivity.class);
             startActivity(intent);
         });
 
-        // ====== Invite provider button ======
+        // Invite provider button
         buttonInviteProvider.setOnClickListener(v -> {
             createInviteCode();
         });
@@ -97,18 +97,24 @@ public class ParentHomeActivity extends AppCompatActivity {
         loadChildren(); // refresh on return
     }
 
-    // ---------------------
-    // 🔹 LOAD CHILDREN LIST
-    // ---------------------
+    //Load children list
     private void loadChildren() {
-        childList.clear();
-        String parentUid = auth.getCurrentUser().getUid();
+        //check user
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            childList.clear();
+            childAdapter.notifyDataSetChanged();
+            return;
+        }
+
+        String parentUid = user.getUid();
 
         db.collection("parents")
                 .document(parentUid)
                 .collection("children")
                 .get()
                 .addOnSuccessListener(snap -> {
+                    childList.clear();   //clear first
                     for (QueryDocumentSnapshot doc : snap) {
                         Child child = new Child(
                                 doc.getId(),
@@ -125,9 +131,8 @@ public class ParentHomeActivity extends AppCompatActivity {
                 );
     }
 
-    // ---------------------
-    // 🔹 PROVIDER INVITE CODE
-    // ---------------------
+
+    // Provider invite code
     private void createInviteCode() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -152,7 +157,7 @@ public class ParentHomeActivity extends AppCompatActivity {
                 );
     }
 
-    // code generator
+    //code generator
     private String generateCode(int length) {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         SecureRandom random = new SecureRandom();
@@ -163,7 +168,7 @@ public class ParentHomeActivity extends AppCompatActivity {
         return sb.toString();
     }
 
-    // dialog
+    //dialog
     private void showInviteDialog(String code) {
         new AlertDialog.Builder(this)
                 .setTitle("Invite Code")
@@ -173,7 +178,7 @@ public class ParentHomeActivity extends AppCompatActivity {
                 .show();
     }
 
-    // system share
+    //system share
     private void shareInviteCode(String code) {
         String text = "Here is my SmartAir invite code: " + code;
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
