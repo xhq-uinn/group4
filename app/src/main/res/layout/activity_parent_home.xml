@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     tools:context=".ParentHomeActivity">
 
-
     <!-- Title -->
     <TextView
         android:id="@+id/text_parent_title"
@@ -33,19 +32,27 @@
         app:layout_constraintTop_toBottomOf="@id/text_parent_title" />
 
     <!-- Add Child Button -->
-
-    <!-- Recycler for Child List -->
     <Button
         android:id="@+id/btn_add_child"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
+        android:layout_marginEnd="16dp"
         android:text="Add Child"
         app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle"
-        app:layout_constraintVertical_bias="0.428" />
+        app:layout_constraintEnd_toStartOf="@id/btn_link_child"
+        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
 
+    <!-- Link Child Button (NEW) -->
+    <Button
+        android:id="@+id/btn_link_child"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Link Child"
+        app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
+
+    <!-- Recycler for Child List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_children"
         android:layout_width="match_parent"
@@ -74,6 +81,4 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-
 </androidx.constraintlayout.widget.ConstraintLayout>
-
