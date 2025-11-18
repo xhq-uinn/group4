@@ -249,9 +249,7 @@ public class ParentHomeActivity extends AppCompatActivity {
     }
 
 
-    // ---------------------
-    // 🔹 LINK CHILD METHODS
-    // ---------------------
+    //link child methods
     private void showLinkChildDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Link Child");

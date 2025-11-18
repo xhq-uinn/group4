@@ -42,7 +42,7 @@
         app:layout_constraintEnd_toStartOf="@id/btn_link_child"
         app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
 
-    <!-- Link Child Button (NEW) -->
+    <!-- Link Child Button  -->
     <Button
         android:id="@+id/btn_link_child"
         android:layout_width="wrap_content"
