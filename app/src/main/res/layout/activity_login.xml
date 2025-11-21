@@ -1,69 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center">
+    android:padding="24dp">
 
-    <TextView
-        android:text="LOGIN"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="24dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <EditText
-        android:id="@+id/email"
-        android:hint="Email"
-        android:inputType="textEmailAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <EditText
-        android:id="@+id/password"
-        android:hint="Password"
-        android:inputType="text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <Button
-        android:id="@+id/loginButton"
-        android:text="Login"
-        android:layout_marginTop="16dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/signupLink"
-        android:text="Sign Up?"
-        android:textColor="#2196F3"
-        android:gravity="center"
-        android:layout_marginTop="12dp"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true" />
+        android:orientation="vertical">
 
-<!--    <TextView-->
-<!--        android:id="@+id/forgotPasswordLink"-->
-<!--        android:text="Forgot Password?"-->
-<!--        android:textColor="#2196F3"-->
-<!--        android:gravity="center"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content" />-->
+        <!-- ===== Adult Login Section ===== -->
+        <TextView
+            android:text="Parent / Provider Login"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-    <TextView
-        android:id="@+id/forgotPasswordText"
-        android:text="Forgot password?"
-        android:textColor="#2196F3"
-        android:textSize="16sp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="12dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        <EditText
+            android:id="@+id/emailField"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-</LinearLayout>
+        <EditText
+            android:id="@+id/adultPasswordField"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"/>
+
+
+        <!-- ===== Child Login Section ===== -->
+
+        <TextView
+            android:text="Child Login"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/childUsernameField"
+            android:hint="Username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/childPasswordField"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"/>
+
+
+        <!-- ===== Buttons ===== -->
+
+        <Button
+            android:id="@+id/loginButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Login" />
+
+        <TextView
+            android:id="@+id/forgotPasswordText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Forgot Password?"
+            android:textColor="#3F51B5" />
+
+        <TextView
+            android:id="@+id/signupLink"
+            android:layout_width="wrap_content"
+            android:layout_height="29dp"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:text="Sign Up?"
+            android:textColor="#3F51B5" />
+
+    </LinearLayout>
+</ScrollView>

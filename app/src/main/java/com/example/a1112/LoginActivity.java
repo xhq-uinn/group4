@@ -6,14 +6,15 @@ import android.widget.*;
 import android.content.Intent;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LoginActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
-    private EditText emailField, passwordField;
+
+    private EditText emailField, adultPasswordField;
+    private EditText childUsernameField, childPasswordField;
     private Button loginButton;
 
     @Override
@@ -24,89 +25,145 @@ public class LoginActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        emailField = findViewById(R.id.email);
-        passwordField = findViewById(R.id.password);
+        // Adult login fields
+        emailField = findViewById(R.id.emailField);
+        adultPasswordField = findViewById(R.id.adultPasswordField);
+
+        // Child login fields
+        childUsernameField = findViewById(R.id.childUsernameField);
+        childPasswordField = findViewById(R.id.childPasswordField);
+
         loginButton = findViewById(R.id.loginButton);
 
-        // Login button
-        loginButton.setOnClickListener(v -> loginUser());
+        // --- Button actions ---
+        loginButton.setOnClickListener(v -> handleLogin());
 
-        // Sign up link
         findViewById(R.id.signupLink).setOnClickListener(v ->
                 startActivity(new Intent(this, SignUpActivity.class)));
 
-        // Forgot password link
         findViewById(R.id.forgotPasswordText).setOnClickListener(v ->
                 startActivity(new Intent(this, ResetPasswordActivity.class)));
     }
 
-    private void loginUser() {
-        String email = emailField.getText().toString().trim();
-        String password = passwordField.getText().toString().trim();
+    private void handleLogin() {
 
-        if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Enter email and password", Toast.LENGTH_SHORT).show();
+        String email = emailField.getText().toString().trim();
+        String adultPassword = adultPasswordField.getText().toString().trim();
+
+        String childUsername = childUsernameField.getText().toString().trim();
+        String childPassword = childPasswordField.getText().toString().trim();
+
+        // parent/provider's email&password both filled
+        if (!email.isEmpty() && !adultPassword.isEmpty()) {
+
+            // any of child username or password must be empty
+            if (!childUsername.isEmpty() || !childPassword.isEmpty()) {
+                Toast.makeText(this, "child login or parent login, not both", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            loginAdult(email, adultPassword);
             return;
         }
 
+        // ---------------- CHILD LOGIN ----------------
+        if (!childUsername.isEmpty() && !childPassword.isEmpty()) {
+
+            if (!email.isEmpty() || !adultPassword.isEmpty()) {
+                Toast.makeText(this, "child login or parent login, not both", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            loginChild(childUsername, childPassword);
+            return;
+        }
+
+        Toast.makeText(this, "Please fill in login info", Toast.LENGTH_SHORT).show();
+    }
+
+    // Firebase auth login
+    private void loginAdult(String email, String password) {
         auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Login failed", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                .addOnSuccessListener(task -> {
+                    String uid = auth.getCurrentUser().getUid();
 
-                    FirebaseUser user = auth.getCurrentUser();
-                    if (user == null) return;
+                    db.collection("users").document(uid)
+                            .get()
+                            .addOnSuccessListener(doc -> {
+                                if (!doc.exists()) {
+                                    Toast.makeText(this, "User data missing", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
 
-                    String uid = user.getUid();
+                                Boolean done = doc.getBoolean("hasCompletedOnboarding");
+                                if (done == null) done = false;
 
+                                // check onboarding
+                                if (!done) {
+                                    Intent i = new Intent(this, OnboardingActivity.class);
+                                    startActivity(i);
+                                    finish();
+                                    return;
+                                }
 
-        db.collection("users").document(uid).get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        Toast.makeText(this, "User data missing", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                                // go to correct home
+                                String role = doc.getString("role");
+                                if (role == null) {
+                                    Toast.makeText(this, "Role missing", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
 
-                    // Check if onboarding is completed
-                    Boolean hasCompleted = doc.getBoolean("hasCompletedOnboarding");
-                    if (hasCompleted == null || !hasCompleted) {
-                        // not completed: OnboardingActivity
-                        startActivity(new Intent(this, OnboardingActivity.class));
-                        finish();
-                        return;
-                    }
+                                Intent intent;
+                                switch (role) {
+                                    case "Parent":
+                                        intent = new Intent(this, ParentHomeActivity.class);
+                                        break;
+                                    case "Provider":
+                                        intent = new Intent(this, ProviderHomeActivity.class);
+                                        break;
+                                    default:
+                                        Toast.makeText(this, "Invalid role", Toast.LENGTH_SHORT).show();
+                                        return;
+                                }
 
-                    // completed: go to role-home
-                    String role = doc.getString("role");
-                    if (role == null) {
-                        Toast.makeText(this, "No role found", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    Intent intent;
-                    switch (role) {
-                        case "Parent":
-                            intent = new Intent(this, ParentHomeActivity.class);
-                            break;
-                        case "Child":
-                            intent = new Intent(this, ChildMainActivity.class);
-                            break;
-                        case "Provider":
-                            intent = new Intent(this, ProviderMainActivity.class);
-                            break;
-                        default:
-                            Toast.makeText(this, "Unknown role", Toast.LENGTH_SHORT).show();
-                            return;
-                    }
-
-                    startActivity(intent);
-                    finish();
+                                startActivity(intent);
+                                finish();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Error loading role", Toast.LENGTH_SHORT).show());
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error loading user data", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Login fail", Toast.LENGTH_SHORT).show());
+    }
 
-    });
+    // Firestore child login
+    private void loginChild(String username, String password) {
+        db.collection("children")
+                .whereEqualTo("username", username)
+                .whereEqualTo("password", password)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    if (snap.isEmpty()) {
+                        String childId = snap.getDocuments().get(0).getId();
+
+                        db.collection("users").document(childId)
+                                .get()
+                                .addOnSuccessListener(doc -> {
+                                    Boolean done = doc.getBoolean("hasCompletedOnboarding");
+
+                                    if (done == null || !done) {
+                                        startActivity(new Intent(this, OnboardingActivity.class));
+                                    } else {
+                                        startActivity(new Intent(this, ChildHomeActivity.class));
+                                    }
+                                });
+                        Toast.makeText(this, "Wrong child username or password", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Child Login Success", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(this, ChildHomeActivity.class));
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error loading data", Toast.LENGTH_SHORT).show());
     }
 }

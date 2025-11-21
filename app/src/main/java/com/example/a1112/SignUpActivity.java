@@ -1,11 +1,9 @@
 package com.example.a1112;
-
+import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.*;
-import android.view.View;
 import android.content.Intent;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -38,7 +36,7 @@ public class SignUpActivity extends AppCompatActivity {
         childFields = findViewById(R.id.childFields);
         registerButton = findViewById(R.id.registerButton);
 
-        // 显示/隐藏子女输入框
+        // Only Parent & Child sees child name/age fields
         roleGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.roleParent || checkedId == R.id.roleChild) {
                 childFields.setVisibility(View.VISIBLE);
@@ -58,16 +56,22 @@ public class SignUpActivity extends AppCompatActivity {
 
         int selectedRoleId = roleGroup.getCheckedRadioButtonId();
         if (selectedRoleId == -1) {
-            Toast.makeText(this, "Please select a role", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "select a role needed", Toast.LENGTH_SHORT).show();
             return;
         }
 
         String role = ((RadioButton) findViewById(selectedRoleId)).getText().toString();
 
+        if ((role.equals("Parent") || role.equals("Child")) &&
+                (childName.isEmpty() || childAge.isEmpty())) {
+            Toast.makeText(this, "child name and age needed", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Sign up failed.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Sign up fail", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -76,7 +80,7 @@ public class SignUpActivity extends AppCompatActivity {
 
                     String uid = user.getUid();
 
-                    // 添加到 users
+                    // Add base user data
                     Map<String, Object> userInfo = new HashMap<>();
                     userInfo.put("email", email);
                     userInfo.put("role", role);
@@ -85,34 +89,70 @@ public class SignUpActivity extends AppCompatActivity {
                     db.collection("users").document(uid)
                             .set(userInfo)
                             .addOnSuccessListener(aVoid -> {
-                                if (role.equals("Parent") || role.equals("Child")) {
-                                    addChild(uid, role, childName, childAge);
-                                } else {
-                                    Toast.makeText(this, "Sign up successful!", Toast.LENGTH_SHORT).show();
-                                    startActivity(new Intent(this, LoginActivity.class));
-                                    finish();
+                                switch (role) {
+                                    case "Parent":
+                                        addChildFromParent(uid, childName, childAge);
+                                        break;
+
+                                    case "Child":
+                                        addChildSelfSignup(uid, childName, childAge);
+                                        break;
+
+                                    case "Provider":
+                                        startActivity(new Intent(this, LoginActivity.class));
+                                        finish();
+                                        break;
                                 }
                             });
                 });
     }
 
-    private void addChild(String uid, String role, String name, String age) {
+    // Parent creates child
+    private void addChildFromParent(String parentUid, String name, String age) {
         String childId = UUID.randomUUID().toString();
 
         Map<String, Object> child = new HashMap<>();
         child.put("name", name);
         child.put("age", age);
-        child.put("parentId", role.equals("Parent") ? uid : null);
+        child.put("parentId", parentUid);
+        child.put("username", null);
+        child.put("password", null);
         child.put("sharedProviders", new ArrayList<>());
+
+        //Add onboarding status
+        child.put("hasCompletedOnboarding", false);
 
         db.collection("children").document(childId)
                 .set(child)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Sign up successful!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Parent Sign up successful!", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(this, LoginActivity.class));
                     finish();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to save child.", Toast.LENGTH_SHORT).show());
+                });
+    }
+
+    // Child self signup (has own login)
+    private void addChildSelfSignup(String uid, String name, String age) {
+
+        String childId = uid;  // child’s own UID used as childId
+
+        Map<String, Object> child = new HashMap<>();
+        child.put("name", name);
+        child.put("age", age);
+        child.put("parentId", null);
+        child.put("username", emailField.getText().toString().trim());
+        child.put("password", passwordField.getText().toString().trim());
+        child.put("sharedProviders", new ArrayList<>());
+
+        // Child must also complete onboarding
+        child.put("hasCompletedOnboarding", false);
+
+        db.collection("children").document(childId)
+                .set(child)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Child Sign up successful!", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                    finish();
+                });
     }
 }

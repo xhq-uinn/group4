@@ -23,7 +23,7 @@ public class OnboardingActivity extends AppCompatActivity {
 
         finishButton = findViewById(R.id.finishButton);
 
-        // 点击“Finish Setup”后，更新 Firestore 字段并进入主页
+        // click 'Finish Setup'，update fields in database & enter homepage
         finishButton.setOnClickListener(v -> completeOnboarding());
     }
 
@@ -69,10 +69,10 @@ public class OnboardingActivity extends AppCompatActivity {
                             intent = new Intent(this, ParentHomeActivity.class);
                             break;
                         case "Child":
-                            intent = new Intent(this, ChildMainActivity.class);
+                            intent = new Intent(this, ChildHomeActivity.class);
                             break;
                         case "Provider":
-                            intent = new Intent(this, ProviderMainActivity.class);
+                            intent = new Intent(this, ProviderHomeActivity.class);
                             break;
                         default:
                             Toast.makeText(this, "Unknown role", Toast.LENGTH_SHORT).show();
@@ -85,9 +85,9 @@ public class OnboardingActivity extends AppCompatActivity {
                     finish();
                 })
                 .addOnFailureListener(e -> {
-                Toast.makeText(this, "Failed to load role, going back to login", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(this, LoginActivity.class));
-                finish();
-        });
+                    Toast.makeText(this, "Failed to load role, going back to login", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, LoginActivity.class));
+                    finish();
+                });
     }
 }
