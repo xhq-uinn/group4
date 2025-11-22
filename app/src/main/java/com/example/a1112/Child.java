@@ -1,7 +1,7 @@
 package com.example.a1112;
 
 public class Child {
-    private String id;  // Firestore 文档 ID
+    private String id;  // Firestore document ID
     private String name;
     private String dob;
     private String note;

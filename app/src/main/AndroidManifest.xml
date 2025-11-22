@@ -12,10 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
         <activity
-            android:name=".ProviderMainActivity"
+            android:name=".ProviderHomeActivity"
             android:exported="false" />
         <activity
-            android:name=".ChildMainActivity"
+            android:name=".ChildHomeActivity"
             android:exported="false" />
         <activity
             android:name=".ParentHomeActivity"

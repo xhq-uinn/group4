@@ -9,14 +9,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- 孩子姓名 -->
+        <!-- child name -->
         <EditText
             android:id="@+id/editChildName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Name"/>
 
-        <!-- 出生日期 -->
+        <!-- dob -->
         <EditText
             android:id="@+id/editChildDOB"
             android:layout_width="match_parent"
@@ -24,14 +24,14 @@
             android:hint="DOB (YYYY-MM-DD)"
             android:inputType="date"/>
 
-        <!-- 备注 -->
+        <!-- additional note -->
         <EditText
             android:id="@+id/editChildNote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="optional notes"/>
 
-        <!-- 保存按钮 -->
+        <!-- save button -->
         <Button
             android:id="@+id/saveChildButton"
             android:layout_width="match_parent"
