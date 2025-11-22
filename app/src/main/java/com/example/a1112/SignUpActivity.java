@@ -85,6 +85,7 @@ public class SignUpActivity extends AppCompatActivity {
                     userInfo.put("email", email);
                     userInfo.put("role", role);
                     userInfo.put("hasCompletedOnboarding", false);
+                    userInfo.put("linkedChildren", new ArrayList<>());
 
                     db.collection("users").document(uid)
                             .set(userInfo)
@@ -117,6 +118,7 @@ public class SignUpActivity extends AppCompatActivity {
         child.put("parentId", parentUid);
         child.put("username", null);
         child.put("password", null);
+        child.put("additionalNote", null);
         child.put("sharedProviders", new ArrayList<>());
 
         //Add onboarding status
@@ -125,10 +127,21 @@ public class SignUpActivity extends AppCompatActivity {
         db.collection("children").document(childId)
                 .set(child)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Parent Sign up successful!", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, LoginActivity.class));
-                    finish();
-                });
+
+                    db.collection("users").document(parentUid)
+                            .update("linkedChildren", com.google.firebase.firestore.FieldValue.arrayUnion(childId))
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(this, "Parent Sign up successful!", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(this, LoginActivity.class));
+                                finish();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Child created but failed to link to parent", Toast.LENGTH_SHORT).show()
+                            );
+
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to save child.", Toast.LENGTH_SHORT).show());
     }
 
     // Child self signup (has own login)
