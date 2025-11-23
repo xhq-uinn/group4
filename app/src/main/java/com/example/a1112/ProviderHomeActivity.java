@@ -55,6 +55,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
         initializeData();
         setupPatientList();
         setupClickListeners();
+        loadPatientsFromDatabase();
     }
 
     void initializeViews() {
@@ -75,11 +76,10 @@ public class ProviderHomeActivity extends AppCompatActivity {
     void initializeData() {
         patientList = new ArrayList<>();
         patientChildIds = new ArrayList<>();
-        loadPatientsFromDatabase();
     }
 
     void setupPatientList() {
-        PatientAdapter adapter = new PatientAdapter(patientList, new PatientAdapter.OnPatientClickListener() {
+        adapter = new PatientAdapter(patientList, new PatientAdapter.OnPatientClickListener() {
             @Override
             public void onPatientClick(String patientName) {
                 selectedPatient = patientName;
@@ -133,6 +133,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
     }
 
     private void loadPatientsFromDatabase() {
+        if (adapter == null) return;
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
         String providerId = user.getUid();
