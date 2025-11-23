@@ -33,7 +33,7 @@ public class ParentHomeActivity extends AppCompatActivity {
     // UI
     private Button buttonAddChild;
     private Button buttonLinkChild;
-    private Button buttonInviteProvider;
+//    private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
 
@@ -59,7 +59,7 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         // UI connect
         buttonAddChild = findViewById(R.id.btn_add_child);
-        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
+//        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
         buttonLinkChild = findViewById(R.id.btn_link_child);
         childrenRecyclerView = findViewById(R.id.recycler_children);
         buttonSignOut = findViewById(R.id.btn_signout);
@@ -96,10 +96,10 @@ public class ParentHomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Invite provider button
-        buttonInviteProvider.setOnClickListener(v -> {
-            createInviteCode();
-        });
+//        // Invite provider button
+//        buttonInviteProvider.setOnClickListener(v -> {
+//            createInviteCode();
+//        });
 
         //Link child button
         buttonLinkChild.setOnClickListener(v -> showLinkChildDialog());
@@ -332,60 +332,60 @@ public class ParentHomeActivity extends AppCompatActivity {
 
 
     // Provider invite code
-    private void createInviteCode() {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String parentId = user.getUid();
-        String code = generateCode(8);
-
-        Map<String, Object> inviteData = new HashMap<>();
-        inviteData.put("parentId", parentId);
-        inviteData.put("createdAt", FieldValue.serverTimestamp());
-        inviteData.put("used", false);
-
-        db.collection("invites")
-                .document(code)
-                .set(inviteData)
-                .addOnSuccessListener(unused -> showInviteDialog(code))
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    // code generator
-    private String generateCode(int length) {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
-    }
-
-    // dialog
-    private void showInviteDialog(String code) {
-        new AlertDialog.Builder(this)
-                .setTitle("Invite Code")
-                .setMessage("Share this code with your provider:\n\n" + code)
-                .setPositiveButton("OK", null)
-                .setNeutralButton("Share", (d, w) -> shareInviteCode(code))
-                .show();
-    }
-
-    // system share
-    private void shareInviteCode(String code) {
-        String text = "Here is my SmartAir invite code: " + code;
-        Intent sendIntent = new Intent(Intent.ACTION_SEND);
-        sendIntent.setType("text/plain");
-        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
-
-        startActivity(Intent.createChooser(sendIntent, "Share invite code"));
-    }
+//    private void createInviteCode() {
+//        FirebaseUser user = auth.getCurrentUser();
+//        if (user == null) {
+//            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//
+//        String parentId = user.getUid();
+//        String code = generateCode(8);
+//
+//        Map<String, Object> inviteData = new HashMap<>();
+//        inviteData.put("parentId", parentId);
+//        inviteData.put("createdAt", FieldValue.serverTimestamp());
+//        inviteData.put("used", false);
+//
+//        db.collection("invites")
+//                .document(code)
+//                .set(inviteData)
+//                .addOnSuccessListener(unused -> showInviteDialog(code))
+//                .addOnFailureListener(e ->
+//                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+//                );
+//    }
+//
+//    // code generator
+//    private String generateCode(int length) {
+//        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+//        SecureRandom random = new SecureRandom();
+//        StringBuilder sb = new StringBuilder(length);
+//        for (int i = 0; i < length; i++) {
+//            sb.append(chars.charAt(random.nextInt(chars.length())));
+//        }
+//        return sb.toString();
+//    }
+//
+//    // dialog
+//    private void showInviteDialog(String code) {
+//        new AlertDialog.Builder(this)
+//                .setTitle("Invite Code")
+//                .setMessage("Share this code with your provider:\n\n" + code)
+//                .setPositiveButton("OK", null)
+//                .setNeutralButton("Share", (d, w) -> shareInviteCode(code))
+//                .show();
+//    }
+//
+//    // system share
+//    private void shareInviteCode(String code) {
+//        String text = "Here is my SmartAir invite code: " + code;
+//        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+//        sendIntent.setType("text/plain");
+//        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
+//
+//        startActivity(Intent.createChooser(sendIntent, "Share invite code"));
+//    }
 }
 
 

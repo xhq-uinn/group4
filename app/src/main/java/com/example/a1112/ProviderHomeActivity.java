@@ -10,11 +10,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class ProviderHomeActivity extends AppCompatActivity {
@@ -33,7 +38,9 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
     // Stores data containing list of providers' patients
     List<String> patientList;
+    List<String> patientChildIds;
     String selectedPatient = null;
+    PatientAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +74,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
     void initializeData() {
         patientList = new ArrayList<>();
-
+        patientChildIds = new ArrayList<>();
         loadPatientsFromDatabase();
     }
 
@@ -126,9 +133,113 @@ public class ProviderHomeActivity extends AppCompatActivity {
     }
 
     private void loadPatientsFromDatabase() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+        String providerId = user.getUid();
+
+        db.collection("users")
+                .document(providerId)
+                .collection("linkedChildren")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    patientList.clear();
+                    patientChildIds.clear();
+
+                    if (snapshot.isEmpty()) {
+                        adapter.notifyDataSetChanged();
+                        return;
+                    }
+
+                    for (DocumentSnapshot linkDoc : snapshot.getDocuments()) {
+                        String childId = linkDoc.getString("childId");
+                        if (childId == null) continue;
+
+                        patientChildIds.add(childId);
+
+                        // Fetch child data from children -> childId
+                        db.collection("children")
+                                .document(childId)
+                                .get()
+                                .addOnSuccessListener(childDoc -> {
+                                    if (childDoc.exists()) {
+                                        String name = childDoc.getString("name");
+                                        if (name == null) name = "(Unnamed Child)";
+                                        patientList.add(name);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                });
+                    }
+
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed loading patients: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
+    //provider accepts invite
     private void validateInviteCode(String inviteCode) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        String providerId = user.getUid();
+
+        db.collection("invites")
+                .document(inviteCode)    // Because code is the docID
+                .get()
+                .addOnSuccessListener(doc -> {
+
+                    if (!doc.exists()) {
+                        Toast.makeText(this, "Invalid invite code", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Boolean used = doc.getBoolean("used");
+                    if (used != null && used) {
+                        Toast.makeText(this, "This code has already been used.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    String parentId = doc.getString("parentId");
+                    String childId = doc.getString("childId");
+
+                    if (parentId == null || childId == null) {
+                        Toast.makeText(this, "Invite missing data", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    //Create link in provider's linkedChildren
+                    Map<String, Object> linkData = new HashMap<>();
+                    linkData.put("parentId", parentId);
+                    linkData.put("childId", childId);
+                    linkData.put("createdAt", FieldValue.serverTimestamp());
+
+                    db.collection("users")
+                            .document(providerId)
+                            .collection("linkedChildren")
+                            .add(linkData)
+                            .addOnSuccessListener(ref -> {
+
+                                //Mark invite as used
+                                Map<String, Object> updates = new HashMap<>();
+                                updates.put("used", true);
+                                updates.put("usedByProviderId", providerId);
+
+                                doc.getReference().update(updates);
+
+                                Toast.makeText(this, "Invite Accepted", Toast.LENGTH_SHORT).show();
+                                inviteCodeEditText.setText("");
+
+                                //Reload patient list
+                                loadPatientsFromDatabase();
+
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error validating code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 }
