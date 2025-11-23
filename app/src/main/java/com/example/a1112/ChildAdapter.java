@@ -40,12 +40,13 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     public void onBindViewHolder(@NonNull ChildViewHolder holder, int position) {
         Child child = childList.get(position);
         holder.nameText.setText(child.getName());
-        holder.dobText.setText(child.getDob());
+        holder.ageText.setText(String.valueOf(child.getAge())); // convert int to string
 
         holder.editBtn.setOnClickListener(v -> listener.onEditChild(child));
         holder.deleteBtn.setOnClickListener(v -> listener.onDeleteChild(child));
         holder.shareBtn.setOnClickListener(v -> listener.onShareSettings(child));
     }
+
 
     @Override
     public int getItemCount() {
@@ -53,13 +54,13 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     }
 
     static class ChildViewHolder extends RecyclerView.ViewHolder {
-        TextView nameText, dobText;
+        TextView nameText, ageText;
         Button editBtn, deleteBtn, shareBtn;
 
         public ChildViewHolder(@NonNull View itemView) {
             super(itemView);
             nameText = itemView.findViewById(R.id.textChildName);
-            dobText = itemView.findViewById(R.id.textChildDOB);
+            ageText = itemView.findViewById(R.id.textChildAge);
             editBtn = itemView.findViewById(R.id.btn_edit_child);
             deleteBtn = itemView.findViewById(R.id.btn_delete_child);
             shareBtn = itemView.findViewById(R.id.btn_share_settings);

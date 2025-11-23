@@ -18,11 +18,11 @@
 
         <!-- dob -->
         <EditText
-            android:id="@+id/editChildDOB"
+            android:id="@+id/editChildAge"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="DOB (YYYY-MM-DD)"
-            android:inputType="date"/>
+            android:hint="Age"
+            android:inputType="number" />
 
         <!-- additional note -->
         <EditText
@@ -30,6 +30,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="optional notes"/>
+
+        <EditText
+            android:id="@+id/editChildUsername"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Username (optional)" />
+
+        <EditText
+            android:id="@+id/editChildPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Password (optional)"
+            android:inputType="textPassword" />
+
 
         <!-- save button -->
         <Button
