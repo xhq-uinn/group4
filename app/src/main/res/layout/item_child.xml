@@ -17,16 +17,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@id/btn_edit_child"
-        app:layout_constraintBottom_toTopOf="@id/textChildDOB"
+        app:layout_constraintBottom_toTopOf="@id/textChildAge"
         android:ellipsize="end"
         android:singleLine="true"/>
 
     <!-- Child DOB -->
     <TextView
-        android:id="@+id/textChildDOB"
+        android:id="@+id/textChildAge"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="YYYY-MM-DD"
+        android:text="Age"
         android:textSize="14sp"
         android:textColor="#555555"
         app:layout_constraintStart_toStartOf="parent"

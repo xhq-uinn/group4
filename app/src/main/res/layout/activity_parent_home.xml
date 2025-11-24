@@ -44,21 +44,11 @@
         android:layout_marginEnd="12dp"
         android:text="Add Child"
         app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
-        app:layout_constraintEnd_toStartOf="@id/btn_link_child"
-        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle"
-        app:layout_constraintVertical_bias="0.476" />
-
-    <Button
-        android:id="@+id/btn_link_child"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Link Child"
-        app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
+        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle"
+        app:layout_constraintHorizontal_bias="0.95" />
 
     <!-- Recycler for Child List -->
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_children"
         android:layout_width="334dp"
