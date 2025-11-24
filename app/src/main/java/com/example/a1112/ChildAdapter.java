@@ -1,6 +1,7 @@
 package com.example.a1112;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,8 +46,14 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
         holder.editBtn.setOnClickListener(v -> listener.onEditChild(child));
         holder.deleteBtn.setOnClickListener(v -> listener.onDeleteChild(child));
         holder.shareBtn.setOnClickListener(v -> listener.onShareSettings(child));
-    }
 
+        holder.dailyCheckInBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), DailyCheckInActivity.class);
+            intent.putExtra("childId", child.getId());
+            intent.putExtra("authorRole", "parent");
+            v.getContext().startActivity(intent);
+        });
+    }
 
     @Override
     public int getItemCount() {
@@ -55,7 +62,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
 
     static class ChildViewHolder extends RecyclerView.ViewHolder {
         TextView nameText, ageText;
-        Button editBtn, deleteBtn, shareBtn;
+        Button editBtn, deleteBtn, shareBtn, dailyCheckInBtn;
 
         public ChildViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -64,6 +71,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             editBtn = itemView.findViewById(R.id.btn_edit_child);
             deleteBtn = itemView.findViewById(R.id.btn_delete_child);
             shareBtn = itemView.findViewById(R.id.btn_share_settings);
+            dailyCheckInBtn = itemView.findViewById(R.id.btn_daily_check_in);
         }
     }
 }

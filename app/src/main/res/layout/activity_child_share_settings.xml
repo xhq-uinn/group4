@@ -193,5 +193,15 @@
                 android:visibility="gone"/>
         </LinearLayout>
 
+        <Button
+            android:id="@+id/btnInviteProvider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Invite provider"
+            android:layout_gravity="end"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="4dp" />
     </LinearLayout>
+
+
 </ScrollView>
