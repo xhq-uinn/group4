@@ -145,8 +145,8 @@ public class DailyCheckInActivity extends AppCompatActivity {
         data.put("createdAt", FieldValue.serverTimestamp());
 
         //store into database
-        db.collection("users")
-                .document("children")
+        db.collection("children")
+                .document(childId)
                 .collection("dailyCheckins")
                 .add(data)
                 .addOnSuccessListener(docRef -> {
