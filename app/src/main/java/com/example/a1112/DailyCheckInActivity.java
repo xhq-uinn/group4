@@ -69,7 +69,7 @@ public class DailyCheckInActivity extends AppCompatActivity {
 
         bindViews();
         setupListeners();
-        String date = new SimpleDateFormat("MMM-dd-yyyy", Locale.getDefault())
+        String date = new SimpleDateFormat("MMM-dd-yyyy", Locale.ENGLISH)
                 .format(new Date());
         dateText.setText("Today: " + date);
     }
@@ -128,7 +128,7 @@ public class DailyCheckInActivity extends AppCompatActivity {
         }
 
         // date
-        String dateString = new SimpleDateFormat("MMM-dd-yyyy", Locale.getDefault())
+        String dateString = new SimpleDateFormat("MMM-dd-yyyy", Locale.ENGLISH)
                 .format(new Date());
 
         // assign data

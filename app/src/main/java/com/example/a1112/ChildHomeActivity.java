@@ -11,7 +11,14 @@ import android.content.Intent;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 public class ChildHomeActivity extends AppCompatActivity {
+
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,6 +30,12 @@ public class ChildHomeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // Firebase
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
+
         Button check = findViewById(R.id.check);
         Button log = findViewById(R.id.log);
         Button help = findViewById(R.id.help);
@@ -31,9 +44,12 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button progress = findViewById(R.id.progress);
         Button history = findViewById(R.id.history);
         if (check != null) {
-            check.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO: Daily check-in screen for R5", Toast.LENGTH_SHORT).show()
-            );
+            check.setOnClickListener(v -> {
+                Intent intent = new Intent(ChildHomeActivity.this, DailyCheckInActivity.class);
+                intent.putExtra("childId", user.getUid());//to be revised
+                intent.putExtra("authorRole", "child");
+                startActivity(intent);
+            });
         }
         if (log != null) {
             log.setOnClickListener(v ->
