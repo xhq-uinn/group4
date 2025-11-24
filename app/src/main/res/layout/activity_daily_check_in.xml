@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll_daily_checkin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/layout_daily_checkin_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/text_daily_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Daily Check-in"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Date -->
+        <TextView
+            android:id="@+id/text_daily_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Today"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Entry author: Child / Parent -->
+        <TextView
+            android:id="@+id/text_entry_author_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Who is filling this?"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radio_group_author"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/radio_author_child"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Child" />
+
+            <RadioButton
+                android:id="@+id/radio_author_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Parent"
+                android:layout_marginStart="24dp" />
+        </RadioGroup>
+
+        <!-- Night waking -->
+        <TextView
+            android:id="@+id/text_night_waking_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Night waking"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radio_group_night_waking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <RadioButton
+                android:id="@+id/radio_night_none"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="None" />
+
+            <RadioButton
+                android:id="@+id/radio_night_once"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1 time" />
+
+            <RadioButton
+                android:id="@+id/radio_night_multiple"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2 or more times" />
+        </RadioGroup>
+
+        <!-- Activity limits -->
+        <TextView
+            android:id="@+id/text_activity_limit_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Activity limits"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radio_group_activity_limit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <RadioButton
+                android:id="@+id/radio_activity_none"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No limits" />
+
+            <RadioButton
+                android:id="@+id/radio_activity_some"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="A bit limited" />
+
+            <RadioButton
+                android:id="@+id/radio_activity_cannot_play"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Could not play normally" />
+        </RadioGroup>
+
+        <!-- Cough / Wheeze -->
+        <TextView
+            android:id="@+id/text_cough_wheeze_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cough / Wheeze"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radio_group_cough_wheeze"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <RadioButton
+                android:id="@+id/radio_cough_none"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="None" />
+
+            <RadioButton
+                android:id="@+id/radio_cough_some"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Some" />
+
+            <RadioButton
+                android:id="@+id/radio_cough_a_lot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="A lot" />
+        </RadioGroup>
+
+        <!-- Triggers -->
+        <TextView
+            android:id="@+id/text_triggers_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Triggers (select all that apply)"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <LinearLayout
+            android:id="@+id/layout_triggers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="12dp">
+
+            <CheckBox
+                android:id="@+id/check_trigger_exercise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Exercise" />
+
+            <CheckBox
+                android:id="@+id/check_trigger_cold_air"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cold air" />
+
+            <CheckBox
+                android:id="@+id/check_trigger_dust_pets"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dust or pets" />
+
+            <CheckBox
+                android:id="@+id/check_trigger_smoke"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Smoke" />
+
+            <CheckBox
+                android:id="@+id/check_trigger_illness"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Illness / cold" />
+
+            <CheckBox
+                android:id="@+id/check_trigger_odors"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Perfume / cleaners / strong odors" />
+        </LinearLayout>
+
+        <!-- Optional notes -->
+        <TextView
+            android:id="@+id/text_notes_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notes (optional)"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/edit_notes"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:gravity="top"
+            android:hint="Anything else about today?"
+            android:background="@android:drawable/edit_text"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:id="@+id/layout_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/button_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel" />
+
+            <Button
+                android:id="@+id/button_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
