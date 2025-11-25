@@ -17,8 +17,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ChildHomeActivity extends AppCompatActivity {
 
-    private FirebaseFirestore db;
-    private FirebaseAuth auth;
+//    private FirebaseFirestore db;
+//    private FirebaseAuth auth;
+    private String childId = getIntent().getStringExtra("childId");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +32,10 @@ public class ChildHomeActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Firebase
-        db = FirebaseFirestore.getInstance();
-        auth = FirebaseAuth.getInstance();
-        FirebaseUser user = auth.getCurrentUser();
+//        // Firebase
+//        db = FirebaseFirestore.getInstance();
+//        auth = FirebaseAuth.getInstance();
+//        FirebaseUser user = auth.getCurrentUser();
 
         Button check = findViewById(R.id.check);
         Button log = findViewById(R.id.log);
@@ -46,7 +47,7 @@ public class ChildHomeActivity extends AppCompatActivity {
         if (check != null) {
             check.setOnClickListener(v -> {
                 Intent intent = new Intent(ChildHomeActivity.this, DailyCheckInActivity.class);
-                intent.putExtra("childId", user.getUid());//to be revised
+                intent.putExtra("childId", childId);
                 intent.putExtra("authorRole", "child");
                 startActivity(intent);
             });
