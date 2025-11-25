@@ -19,7 +19,7 @@ public class ChildHomeActivity extends AppCompatActivity {
 
 //    private FirebaseFirestore db;
 //    private FirebaseAuth auth;
-    private String childId = getIntent().getStringExtra("childId");
+    private String childId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +44,8 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button practice = findViewById(R.id.practice);
         Button progress = findViewById(R.id.progress);
         Button history = findViewById(R.id.history);
+
+        childId = getIntent().getStringExtra("childId");
         if (check != null) {
             check.setOnClickListener(v -> {
                 Intent intent = new Intent(ChildHomeActivity.this, DailyCheckInActivity.class);
