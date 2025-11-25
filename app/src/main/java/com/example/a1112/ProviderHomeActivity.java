@@ -121,6 +121,8 @@ public class ProviderHomeActivity extends AppCompatActivity {
                             DocumentSnapshot inviteDoc = task.getResult();
                             Boolean used = inviteDoc.getBoolean("used");
                             String parentId = inviteDoc.getString("parentId");
+                            String childId = inviteDoc.getString("childId");
+                            String usedByProviderId = inviteDoc.getString("usedByProviderId");
                             Date createdAt = inviteDoc.getDate("createdAt");
 
                             // Check if invite is valid
@@ -138,8 +140,8 @@ public class ProviderHomeActivity extends AppCompatActivity {
                             }
 
                             String providerId = getCurrentProviderId();
-                            //valid invite code, then we link the provider to all children of the parent.
-                            linkParentChildrenToProvider(parentId, inviteCode, providerId);
+                            //valid invite code, then we link the provider to the specific child.
+                            linkParentChildrenToProvider(childId, inviteCode, providerId);
 
                         } else {
                             //Display message for when the invite code does not match an invite id in database
@@ -215,43 +217,24 @@ public class ProviderHomeActivity extends AppCompatActivity {
                 });
     }
 
-    private void linkParentChildrenToProvider(String parentId, String inviteCode, String providerId) {
+    private void linkParentChildrenToProvider(String childId, String inviteCode, String providerId) {
         if (providerId == null) {
             Toast.makeText(this, "Error: Provider not authenticated", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Find all children linked to the parent
-        db.collection("children")
-                .whereEqualTo("parentId", parentId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && !task.getResult().isEmpty()) {
 
-                        // Add provider to each child's sharedproviders list
-                        for (QueryDocumentSnapshot childDoc : task.getResult()) {
-                            String childId = childDoc.getId();
+        // find the child
+        db.collection("children").document(childId)
+            .update("sharedProviders", FieldValue.arrayUnion(providerId))
+            .addOnSuccessListener(result -> {
+                // Mark invite as used and record which provider used it
+                markInviteAsUsed(inviteCode, providerId);
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
 
-                            // Update child to include this provider in their providers list
-                            db.collection("children").document(childId)
-                                    .update("sharedProviders", FieldValue.arrayUnion(providerId))
-                                    .addOnFailureListener(e -> {
-                                        Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    });
-                        }
-                        //In the invites collection, change "used" field value to True
-                        markInviteAsUsed(inviteCode);
-
-
-
-                    } else {
-                        //error message if the parent is not linked to any children
-                        Toast.makeText(this, "No children found for this invite", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error finding children: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
     }
 
     //gets the id of the user
@@ -262,17 +245,28 @@ public class ProviderHomeActivity extends AppCompatActivity {
         return null;
     }
     //marks an invite as used when used by a provider
-    private void markInviteAsUsed(String inviteCode) {
+    private void markInviteAsUsed(String inviteCode, String providerId) {
         db.collection("invites").document(inviteCode)
                 .update("used", true)
-                .addOnSuccessListener(aVoid -> {
-                    inviteCodeEditText.setText("");
-                    Toast.makeText(this, "Patients linked successfully!", Toast.LENGTH_SHORT).show();
+                .addOnSuccessListener(result -> {
+                    markProviderUsed(inviteCode, providerId);
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Error updating invite: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
+    private void markProviderUsed(String inviteCode, String providerId) {
+    db.collection("invites").document(inviteCode)
+            .update("usedByProviderId", providerId)
+            .addOnSuccessListener(result -> {
+                inviteCodeEditText.setText("");
+                Toast.makeText(this, "Patient linked successfully!", Toast.LENGTH_SHORT).show();
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Error recording provider usage: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+}
     //checks if an invite has expired(7 days gone by) and returns True if expired
     private boolean isInviteExpired(Date createdAt) {
 
