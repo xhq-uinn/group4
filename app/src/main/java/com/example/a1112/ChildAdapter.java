@@ -22,6 +22,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
         void onEditChild(Child child);
         void onDeleteChild(Child child);
         void onShareSettings(Child child);
+        void onOpenChildHome(Child child);
     }
 
     public ChildAdapter(List<Child> childList, OnChildActionListener listener) {
@@ -53,6 +54,8 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             intent.putExtra("authorRole", "parent");
             v.getContext().startActivity(intent);
         });
+
+        holder.childHomeBtn.setOnClickListener(v -> listener.onOpenChildHome(child));
     }
 
     @Override
@@ -63,6 +66,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     static class ChildViewHolder extends RecyclerView.ViewHolder {
         TextView nameText, ageText;
         Button editBtn, deleteBtn, shareBtn, dailyCheckInBtn;
+        Button childHomeBtn;
 
         public ChildViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -72,6 +76,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             deleteBtn = itemView.findViewById(R.id.btn_delete_child);
             shareBtn = itemView.findViewById(R.id.btn_share_settings);
             dailyCheckInBtn = itemView.findViewById(R.id.btn_daily_check_in);
+            childHomeBtn = itemView.findViewById(R.id.btn_child_home);
         }
     }
 }

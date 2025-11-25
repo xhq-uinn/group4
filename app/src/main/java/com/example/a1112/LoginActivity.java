@@ -66,7 +66,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // ---------------- CHILD LOGIN ----------------
+        //child login
         if (!childUsername.isEmpty() && !childPassword.isEmpty()) {
 
             if (!email.isEmpty() || !adultPassword.isEmpty()) {
@@ -143,27 +143,63 @@ public class LoginActivity extends AppCompatActivity {
                 .whereEqualTo("password", password)
                 .get()
                 .addOnSuccessListener(snap -> {
+
                     if (snap.isEmpty()) {
-                        String childId = snap.getDocuments().get(0).getId();
-
-                        db.collection("users").document(childId)
-                                .get()
-                                .addOnSuccessListener(doc -> {
-                                    Boolean done = doc.getBoolean("hasCompletedOnboarding");
-
-                                    if (done == null || !done) {
-                                        startActivity(new Intent(this, OnboardingActivity.class));
-                                    } else {
-                                        startActivity(new Intent(this, ChildHomeActivity.class));
-                                    }
-                                });
                         Toast.makeText(this, "Wrong child username or password", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Child Login Success", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, ChildHomeActivity.class));
+                        return;
                     }
+
+                    //get child id
+                    String childId = snap.getDocuments().get(0).getId();
+
+                    //check onboarding
+                    Boolean done = snap.getDocuments().get(0).getBoolean("hasCompletedOnboarding");
+                    if (done == null || !done) {
+                        Intent intent = new Intent(this, OnboardingActivity.class);
+                        intent.putExtra("childId", childId);
+                        startActivity(intent);
+                        finish();
+                        return;
+                    }
+
+                    //go to ChildHomeActivity
+                    Intent intent = new Intent(this, ChildHomeActivity.class);
+                    intent.putExtra("childId", childId);
+                    startActivity(intent);
+                    finish();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error loading data", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Error loading data", Toast.LENGTH_SHORT).show()
+                );
     }
 }
+//    private void loginChild(String username, String password) {
+//        db.collection("children")
+//                .whereEqualTo("username", username)
+//                .whereEqualTo("password", password)
+//                .get()
+//                .addOnSuccessListener(snap -> {
+//                    if (snap.isEmpty()) {
+//                        String childId = snap.getDocuments().get(0).getId();
+//
+//                        db.collection("users").document(childId)
+//                                .get()
+//                                .addOnSuccessListener(doc -> {
+//                                    Boolean done = doc.getBoolean("hasCompletedOnboarding");
+//
+//                                    if (done == null || !done) {
+//                                        startActivity(new Intent(this, OnboardingActivity.class));
+//                                    } else {
+//                                        startActivity(new Intent(this, ChildHomeActivity.class));
+//                                    }
+//                                });
+//                        Toast.makeText(this, "Wrong child username or password", Toast.LENGTH_SHORT).show();
+//                    } else {
+//                        Toast.makeText(this, "Child Login Success", Toast.LENGTH_SHORT).show();
+//                        startActivity(new Intent(this, ChildHomeActivity.class));
+//                    }
+//                })
+//                .addOnFailureListener(e ->
+//                        Toast.makeText(this, "Error loading data", Toast.LENGTH_SHORT).show());
+//    }
+//}

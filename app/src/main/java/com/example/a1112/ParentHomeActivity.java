@@ -82,6 +82,13 @@ public class ParentHomeActivity extends AppCompatActivity {
                 intent.putExtra("childName", child.getName());
                 startActivity(intent);
             }
+
+            @Override
+            public void onOpenChildHome(Child child) {
+                Intent intent = new Intent(ParentHomeActivity.this, ChildHomeActivity.class);
+                intent.putExtra("childId", child.getId());  // 传 childId
+                startActivity(intent);
+            }
         });
         childrenRecyclerView.setAdapter(childAdapter);
 

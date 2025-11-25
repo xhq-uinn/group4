@@ -13,6 +13,9 @@ public class OnboardingActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private Button finishButton;
 
+    private String childId; // child login 用
+    private boolean isChild = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,71 +26,52 @@ public class OnboardingActivity extends AppCompatActivity {
 
         finishButton = findViewById(R.id.finishButton);
 
-        // click 'Finish Setup'，update fields in database & enter homepage
+        // Check if launched from child login
+        childId = getIntent().getStringExtra("childId");
+        if (childId != null) {
+            isChild = true;
+        }
+
         finishButton.setOnClickListener(v -> completeOnboarding());
     }
 
     private void completeOnboarding() {
-        String uid = auth.getCurrentUser().getUid();
 
-        // in Firestore mark onboarding complete
-        db.collection("users").document(uid)
-                .update("hasCompletedOnboarding", true)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Setup complete", Toast.LENGTH_SHORT).show();
-
-                    // go to home according to roles
-                    goToRoleHome(uid);
-                    finish();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to update onboarding: " + e.getMessage(), Toast.LENGTH_LONG).show());
-    }
-    private void goToRoleHome(String uid) {
-        db.collection("users").document(uid)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (!doc.exists()) {
-                        Toast.makeText(this, "User data missing", Toast.LENGTH_SHORT).show();
-                        // back to sign in
-                        startActivity(new Intent(this, LoginActivity.class));
+        if (isChild) {
+            // CASE 1 — CHILD LOGIN
+            db.collection("children")
+                    .document(childId)
+                    .update("hasCompletedOnboarding", true)
+                    .addOnSuccessListener(aVoid -> {
+                        Intent i = new Intent(this, ChildHomeActivity.class);
+                        i.putExtra("childId", childId);
+                        startActivity(i);
                         finish();
-                        return;
-                    }
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Child onboarding update failed", Toast.LENGTH_SHORT).show()
+                    );
 
-                    String role = doc.getString("role");
-                    if (role == null) {
-                        Toast.makeText(this, "No role found", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, LoginActivity.class));
+        } else {
+            // CASE 2 — PARENT / PROVIDER LOGIN
+            String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+
+            if (uid == null) {
+                Toast.makeText(this, "Error: user not logged in", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+
+            db.collection("users")
+                    .document(uid)
+                    .update("hasCompletedOnboarding", true)
+                    .addOnSuccessListener(aVoid -> {
+                        startActivity(new Intent(this, ParentHomeActivity.class));
                         finish();
-                        return;
-                    }
-
-                    Intent intent;
-                    switch (role) {
-                        case "Parent":
-                            intent = new Intent(this, ParentHomeActivity.class);
-                            break;
-                        case "Child":
-                            intent = new Intent(this, ChildHomeActivity.class);
-                            break;
-                        case "Provider":
-                            intent = new Intent(this, ProviderHomeActivity.class);
-                            break;
-                        default:
-                            Toast.makeText(this, "Unknown role", Toast.LENGTH_SHORT).show();
-
-                            intent = new Intent(this, LoginActivity.class);
-                            break;
-                    }
-
-                    startActivity(intent);
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load role, going back to login", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, LoginActivity.class));
-                    finish();
-                });
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Onboarding update failed", Toast.LENGTH_SHORT).show()
+                    );
+        }
     }
 }
