@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
         <activity
+            android:name=".PEFActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TriageActivity"
+            android:exported="false" />
+        <activity
             android:name=".ProviderHomeActivity"
             android:exported="false" />
         <activity
@@ -39,15 +45,12 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
-
         <activity
             android:name=".AddChildActivity"
             android:exported="false" />
-
         <activity
             android:name=".ChildShareSettingsActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>

@@ -160,7 +160,11 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Wrong child username or password", Toast.LENGTH_SHORT).show();
                     } else {
                         Toast.makeText(this, "Child Login Success", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, ChildHomeActivity.class));
+                        String childId = snap.getDocuments().get(0).getId();
+                        Intent intent = new Intent(this, ChildHomeActivity.class);
+                        intent.putExtra("childId", childId);
+                        startActivity(intent);
+                        //changed here
                     }
                 })
                 .addOnFailureListener(e ->
