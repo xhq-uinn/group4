@@ -11,7 +11,12 @@ import android.content.Intent;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class ChildHomeActivity extends AppCompatActivity {
+
+    private String currentChildId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +41,18 @@ public class ChildHomeActivity extends AppCompatActivity {
             );
         }
         if (log != null) {
-            log.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO: Log medicine screen for R3", Toast.LENGTH_SHORT).show()
-            );
+            log.setOnClickListener(v -> {
+
+
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                currentChildId = currentUser.getUid();
+
+                Intent intent = new Intent(ChildHomeActivity.this, MedicineLogActivity.class);
+                intent.putExtra("CHILD_ID", currentChildId);
+                intent.putExtra("CHILD_NAME", "My");
+                intent.putExtra("USER_TYPE", "child");
+                startActivity(intent);
+            });
         }
         if (help != null) {
             help.setOnClickListener(v ->
@@ -67,5 +81,8 @@ public class ChildHomeActivity extends AppCompatActivity {
                 finish();
             });
         }
+
     }
+
+
 }

@@ -32,10 +32,11 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     // UI
     private Button buttonAddChild;
-    private Button buttonLinkChild;
     private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
+    private Button buttonInventory;
+    private Button buttonMedicineLog;
 
 
     // Firebase
@@ -60,9 +61,11 @@ public class ParentHomeActivity extends AppCompatActivity {
         // UI connect
         buttonAddChild = findViewById(R.id.btn_add_child);
         buttonInviteProvider = findViewById(R.id.btn_invite_provider);
-        buttonLinkChild = findViewById(R.id.btn_link_child);
         childrenRecyclerView = findViewById(R.id.recycler_children);
         buttonSignOut = findViewById(R.id.btn_signout);
+        buttonInventory = findViewById(R.id.buttonInventory);
+        buttonMedicineLog = findViewById(R.id.buttonMedicineLog);
+
 
         // Recycler setup
         childrenRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -88,7 +91,6 @@ public class ParentHomeActivity extends AppCompatActivity {
         childrenRecyclerView.setAdapter(childAdapter);
 
         // Load children
-//        loadChildren();
 
         // Add child button
         buttonAddChild.setOnClickListener(v -> {
@@ -101,8 +103,6 @@ public class ParentHomeActivity extends AppCompatActivity {
             createInviteCode();
         });
 
-        //Link child button
-        buttonLinkChild.setOnClickListener(v -> showLinkChildDialog());
 
         //sign out
         buttonSignOut.setOnClickListener(v -> {
@@ -115,6 +115,16 @@ public class ParentHomeActivity extends AppCompatActivity {
             finish();
         });
 
+        buttonInventory.setOnClickListener(v -> {
+            showChildSelectionForInventoryDialog();
+        });
+
+        buttonMedicineLog.setOnClickListener(v -> {
+            showChildSelectionForMedicineLogDialog();
+        });
+
+
+
     }
 
     @Override
@@ -125,9 +135,10 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     //Load children list
     private void loadChildren() {
-        //check user
         FirebaseUser user = auth.getCurrentUser();
+
         if (user == null) {
+            // No user logged in, clear list
             childList.clear();
             childAdapter.notifyDataSetChanged();
             return;
@@ -135,84 +146,159 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         String parentUid = user.getUid();
 
-        db.collection("parents")
+        db.collection("users")
                 .document(parentUid)
-                .collection("children")
                 .get()
-                .addOnSuccessListener(snap -> {
-                    childList.clear();   //clear first
-                    for (QueryDocumentSnapshot doc : snap) {
-                        Child child = new Child(
-                                doc.getId(),
-                                doc.getString("name"),
-                                doc.getString("dob"),
-                                doc.getString("note")
-                        );
-                        childList.add(child);
+                .addOnSuccessListener(documentSnapshot -> {
+                    // Validate parent account
+                    if (!documentSnapshot.exists() || !"Parent".equals(documentSnapshot.getString("role"))) {
+                        childList.clear();
+                        childAdapter.notifyDataSetChanged();
+                        return;
                     }
-                    childAdapter.notifyDataSetChanged();
+
+                    // Safely read linkedChildren
+                    List<String> linkedChildren;
+                    Object obj = documentSnapshot.get("linkedChildren");
+                    if (obj instanceof List<?>) {
+                        linkedChildren = new ArrayList<>();
+                        for (Object o : (List<?>) obj) {
+                            if (o instanceof String) {
+                                linkedChildren.add((String) o);
+                            }
+                        }
+                    } else {
+                        linkedChildren = new ArrayList<>();
+                    }
+
+                    // Parent always has at least one child, so no empty check
+                    childList.clear();
+
+                    // Fetch each child
+                    for (String childId : linkedChildren) {
+                        db.collection("children")
+                                .document(childId)
+                                .get()
+                                .addOnSuccessListener(childDoc -> {
+                                    if (childDoc.exists()) {
+                                        // Handle age as int
+                                        int age = 0;
+                                        Object ageObj = childDoc.get("age");
+                                        if (ageObj instanceof Long) {
+                                            age = ((Long) ageObj).intValue();
+                                        } else if (ageObj instanceof Double) {
+                                            age = ((Double) ageObj).intValue();
+                                        }
+
+                                        // Handle other fields
+                                        String name = childDoc.getString("name");
+                                        String note = childDoc.getString("note");
+                                        String username = childDoc.getString("username");
+                                        String parentId = childDoc.getString("parentId");
+                                        Boolean hasCompletedOnboarding = childDoc.getBoolean("hasCompletedOnboarding");
+                                        if (hasCompletedOnboarding == null) hasCompletedOnboarding = false;
+
+                                        List<String> sharedProviders = (List<String>) childDoc.get("sharedProviders");
+                                        if (sharedProviders == null) sharedProviders = new ArrayList<>();
+
+                                        // Create Child object
+                                        Child child = new Child(
+                                                childDoc.getId(),
+                                                name,
+                                                age,
+                                                note,
+                                                username,
+                                                parentId,
+                                                hasCompletedOnboarding,
+                                                sharedProviders
+                                        );
+
+                                        childList.add(child);
+                                        childAdapter.notifyDataSetChanged();
+                                    }
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(this,
+                                                "Failed to load child: " + e.getMessage(),
+                                                Toast.LENGTH_SHORT).show()
+                                );
+                    }
+
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load children", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this,
+                                "Failed to load linked children: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show()
                 );
     }
 
-
-
-    //delete child method
     private void showEditChildDialog(Child child) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Edit Child");
 
+        // Create a vertical layout for the dialog
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 40, 50, 10);
 
+        // Name input
         final EditText etName = new EditText(this);
         etName.setHint("Name");
-        etName.setText(child.getName());
+        etName.setText(child.getName()); // Set current name
         layout.addView(etName);
 
-        final EditText etDOB = new EditText(this);
-        etDOB.setHint("DOB (YYYY-MM-DD)");
-        etDOB.setText(child.getDob());
-        layout.addView(etDOB);
+        // Age input
+        final EditText etAge = new EditText(this);
+        etAge.setHint("Age");
+        etAge.setInputType(InputType.TYPE_CLASS_NUMBER); // Only allow numbers
+        etAge.setText(String.valueOf(child.getAge())); // Convert int to String safely
+        layout.addView(etAge);
 
+        // Note input
         final EditText etNote = new EditText(this);
         etNote.setHint("Note");
-        etNote.setText(child.getNote());
+        etNote.setText(child.getNote() != null ? child.getNote() : ""); // Avoid null
         layout.addView(etNote);
 
+        // Set the layout in the dialog
         builder.setView(layout);
 
+        // Save button
         builder.setPositiveButton("Save", (dialog, which) -> {
             String newName = etName.getText().toString().trim();
-            String newDob = etDOB.getText().toString().trim();
+            String newAgeStr = etAge.getText().toString().trim();
             String newNote = etNote.getText().toString().trim();
 
-            if (!newName.isEmpty() && !newDob.isEmpty()) {
-                updateChild(child.getId(), newName, newDob, newNote);
+            // Validate required fields
+            if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
+                updateChild(child.getId(), newName, newAgeStr, newNote);
             } else {
-                Toast.makeText(this, "Name and DOB required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Name and Age are required", Toast.LENGTH_SHORT).show();
             }
         });
 
         builder.setNegativeButton("Cancel", null);
         builder.show();
     }
-    // ---------------------
-    // 🔹 EDIT CHILD METHODS
-    // ---------------------
-    private void updateChild(String childId, String name, String dob, String note) {
-        String parentUid = auth.getCurrentUser().getUid();
+
+
+    // Edit Child Method
+    private void updateChild(String childId, String name, String ageStr, String note) {
+        int age;
+        try {
+            age = Integer.parseInt(ageStr);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Age must be a number", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Prepare updated data
         Map<String, Object> data = new HashMap<>();
         data.put("name", name);
-        data.put("dob", dob);
+        data.put("age", age);
         data.put("note", note);
 
-        db.collection("parents")
-                .document(parentUid)
-                .collection("children")
+        db.collection("children")
                 .document(childId)
                 .update(data)
                 .addOnSuccessListener(aVoid -> {
@@ -220,9 +306,41 @@ public class ParentHomeActivity extends AppCompatActivity {
                     loadChildren();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
+
+    // Delete Child Method
+    private void deleteChild(Child child) {
+        String parentUid = auth.getCurrentUser().getUid();
+
+        // Delete the child document from Firestore
+        db.collection("children")
+                .document(child.getId())
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    // Remove the child ID from the parent's linkedChildren array
+                    db.collection("users")
+                            .document(parentUid)
+                            .update("linkedChildren", FieldValue.arrayRemove(child.getId()))
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(this, "Child deleted", Toast.LENGTH_SHORT).show();
+
+                                // Remove the child from the local list to immediately update the UI
+                                childList.remove(child);
+                                childAdapter.notifyDataSetChanged();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, "Failed to update parent: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                            );
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to delete child: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
+    }
+
+
+
     private void showDeleteChildDialog(Child child) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Child")
@@ -232,102 +350,6 @@ public class ParentHomeActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void deleteChild(Child child) {
-        String parentUid = auth.getCurrentUser().getUid();
-        db.collection("parents")
-                .document(parentUid)
-                .collection("children")
-                .document(child.getId())
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Child deleted", Toast.LENGTH_SHORT).show();
-                    loadChildren();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-
-    //link child methods
-    private void showLinkChildDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Link Child");
-
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 40, 50, 10);
-
-        final EditText etName = new EditText(this);
-        etName.setHint("Child Name");
-        layout.addView(etName);
-
-        final EditText etDOB = new EditText(this);
-        etDOB.setHint("DOB (YYYY-MM-DD)");
-        layout.addView(etDOB);
-
-        final EditText etEmail = new EditText(this);
-        etEmail.setHint("Email");
-        etEmail.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        layout.addView(etEmail);
-
-        builder.setView(layout);
-
-        builder.setPositiveButton("Link", (dialog, which) -> {
-            String name = etName.getText().toString().trim();
-            String dob = etDOB.getText().toString().trim();
-            String email = etEmail.getText().toString().trim();
-
-            if (!name.isEmpty() && !dob.isEmpty() && !email.isEmpty()) {
-                linkChildByNameDobEmail(name, dob, email);
-            } else {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
-    }
-
-    private void linkChildByNameDobEmail(String name, String dob, String email) {
-        db.collection("children")
-                .whereEqualTo("name", name)
-                .whereEqualTo("dob", dob)
-                .whereEqualTo("email", email)
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    if (!snapshot.isEmpty()) {
-                        String childId = snapshot.getDocuments().get(0).getId();
-                        addChildToParent(childId, name, dob, email);
-                    } else {
-                        Toast.makeText(this, "No matching child found", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    private void addChildToParent(String childId, String name, String dob, String email) {
-        String parentUid = auth.getCurrentUser().getUid();
-        Map<String, Object> data = new HashMap<>();
-        data.put("name", name);
-        data.put("dob", dob);
-        data.put("email", email);
-
-        db.collection("parents")
-                .document(parentUid)
-                .collection("children")
-                .document(childId)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Child linked successfully!", Toast.LENGTH_SHORT).show();
-                    loadChildren(); // 刷新列表
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
 
 
 
@@ -386,9 +408,56 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         startActivity(Intent.createChooser(sendIntent, "Share invite code"));
     }
+
+
+    //helper to display child selection to route to specific childs medicine log
+    private void showChildSelectionForMedicineLogDialog() {
+        if (childList.isEmpty()) {
+            Toast.makeText(this, "No children added yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Child for Medicine Log");
+        builder.setItems(childNames, (dialog, which) -> {
+            Child selectedChild = childList.get(which);
+            Intent intent = new Intent(ParentHomeActivity.this, MedicineLogActivity.class);
+            intent.putExtra("CHILD_ID", selectedChild.getId());
+            intent.putExtra("CHILD_NAME", selectedChild.getName());
+            intent.putExtra("USER_TYPE", "parent");
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    //helper to display child selection to route to specific childs inventory
+    private void showChildSelectionForInventoryDialog() {
+        if (childList.isEmpty()) {
+            Toast.makeText(this, "No children added yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Child for Medicines");
+        builder.setItems(childNames, (dialog, which) -> {
+            Child selectedChild = childList.get(which);
+            Intent intent = new Intent(ParentHomeActivity.this, InventoryActivity.class);
+            intent.putExtra("CHILD_ID", selectedChild.getId());
+            intent.putExtra("CHILD_NAME", selectedChild.getName());
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
 }
-
-
-
-
-

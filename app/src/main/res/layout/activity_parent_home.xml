@@ -8,8 +8,6 @@
     tools:context=".ParentHomeActivity">
 
     <!-- Title -->
-
-    <!-- Children List Title -->
     <TextView
         android:id="@+id/text_parent_title"
         android:layout_width="wrap_content"
@@ -22,8 +20,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-
-    <!-- Link Child-->
+    <!-- Children List Title -->
     <TextView
         android:id="@+id/textChildrenListTitle"
         android:layout_width="wrap_content"
@@ -57,19 +54,40 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
 
-    <!-- Recycler for Child List -->
+    <Button
+        android:id="@+id/buttonMedicineLog"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="4dp"
+        android:text="Medicine Log"
+        app:layout_constraintEnd_toStartOf="@+id/buttonInventory"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle" />
 
+    <Button
+        android:id="@+id/buttonInventory"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="4dp"
+        android:text="Manage Medicines"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/buttonMedicineLog"
+        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle" />
+
+    <!-- Recycler for Child List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_children"
-        android:layout_width="334dp"
-        android:layout_height="504dp"
-        android:layout_marginTop="12dp"
-        app:layout_constraintBottom_toTopOf="@id/btn_invite_provider"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_invite_provider"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.363"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle"
-        app:layout_constraintVertical_bias="0.409" />
+        app:layout_constraintTop_toBottomOf="@id/buttonInventory" />
 
     <Button
         android:id="@+id/btn_invite_provider"
