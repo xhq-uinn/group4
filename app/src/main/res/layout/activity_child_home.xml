@@ -11,7 +11,7 @@
         android:id="@+id/zone"
         android:layout_width="366dp"
         android:layout_height="78dp"
-        android:text="Hi, Today you are in the   zone for R4"
+        android:text="Hi, Today you are in the zone for R4"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
