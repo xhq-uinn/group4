@@ -29,8 +29,8 @@ public class TriageActivity extends AppCompatActivity {
     private FirebaseFirestore db;
 
 
-    private String childId = "default_child";
-    private String parentId = null;
+    private String childId;
+    private String parentId;
 
 
     private String prefsPrefix = "child_default_child_";
@@ -86,8 +86,6 @@ public class TriageActivity extends AppCompatActivity {
         String fromIntent = getIntent().getStringExtra("childId");
         if (fromIntent != null && !fromIntent.isEmpty()) {
             childId = fromIntent;
-        } else if (currentUser != null) {
-            childId = currentUser.getUid();
         } else {
             Toast.makeText(this,
                     "Not signed in. Returning to login.",

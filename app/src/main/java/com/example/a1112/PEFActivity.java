@@ -23,7 +23,7 @@ public class PEFActivity extends AppCompatActivity {
     private FirebaseUser currentUser;
     private FirebaseFirestore db;
 
-    private String childId = "default_child";
+    private String childId;
 
 
     private int pb = 350;
@@ -46,9 +46,8 @@ public class PEFActivity extends AppCompatActivity {
         String fromIntent = getIntent().getStringExtra("childId");
         if (fromIntent != null && !fromIntent.isEmpty()) {
             childId = fromIntent;
-        } else if (currentUser != null) {
-            childId = currentUser.getUid();
-        } else {
+        }
+        else {
             Toast.makeText(this,
                     "Not signed in. Returning to login.",
                     Toast.LENGTH_SHORT).show();
