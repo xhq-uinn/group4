@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
         <activity
+            android:name=".PEFActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TriageActivity"
+            android:exported="false" />
+        <activity
             android:name=".Parent_Setting_Activity"
             android:exported="false" />
         <activity

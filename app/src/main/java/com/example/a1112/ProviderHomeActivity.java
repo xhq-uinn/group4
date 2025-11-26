@@ -66,7 +66,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
         submitButton = findViewById(R.id.submitButton);
         patientsRecyclerView = findViewById(R.id.patientsRecyclerView);
         buttonSelectPatient = findViewById(R.id.buttonSelectPatient);
-        buttonSettings = findViewById(R.id.buttonSettings);
+        //buttonSettings = findViewById(R.id.buttonSettings); this line error so i changed it
         buttonSignOut = findViewById(R.id.buttonSignOut);
 
         // Setup RecyclerView layout manager

@@ -20,6 +20,10 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.ListenerRegistration;
+import android.content.SharedPreferences;
+import com.google.firebase.Timestamp;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -40,6 +44,7 @@ public class ParentHomeActivity extends AppCompatActivity {
     // Firebase
     private FirebaseFirestore db;
     private FirebaseAuth auth;
+    private ListenerRegistration alertsListener;
 
     // children list
     private List<Child> childList = new ArrayList<>();
@@ -246,6 +251,27 @@ public class ParentHomeActivity extends AppCompatActivity {
         etAge.setText(String.valueOf(child.getAge())); // Convert int to String safely
         layout.addView(etAge);
 
+        // PB input （add here）
+        final EditText etPb = new EditText(this);
+        etPb.setHint("PB (optional)");
+        etPb.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(etPb);
+
+        // Red Action Plan
+        final EditText etRedAction = new EditText(this);
+        etRedAction.setHint("Red zone action plan (optional)");
+        layout.addView(etRedAction);
+
+        // 🟡 Yellow Action Plan
+        final EditText etYellowAction = new EditText(this);
+        etYellowAction.setHint("Yellow zone action plan (optional)");
+        layout.addView(etYellowAction);
+
+        // Green Action Plan
+        final EditText etGreenAction = new EditText(this);
+        etGreenAction.setHint("Green zone action plan (optional)");
+        layout.addView(etGreenAction);
+
         // Note input
         final EditText etNote = new EditText(this);
         etNote.setHint("Note");
@@ -259,11 +285,16 @@ public class ParentHomeActivity extends AppCompatActivity {
         builder.setPositiveButton("Save", (dialog, which) -> {
             String newName = etName.getText().toString().trim();
             String newAgeStr = etAge.getText().toString().trim();
+            String newPbStr  = etPb.getText().toString().trim();
             String newNote = etNote.getText().toString().trim();
+
+            String redActionStr    = etRedAction.getText().toString().trim();
+            String yellowActionStr = etYellowAction.getText().toString().trim();
+            String greenActionStr  = etGreenAction.getText().toString().trim();
 
             // Validate required fields
             if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
-                updateChild(child.getId(), newName, newAgeStr, newNote);
+                updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr, redActionStr, yellowActionStr, greenActionStr);//changed here
             } else {
                 Toast.makeText(this, "Name and Age are required", Toast.LENGTH_SHORT).show();
             }
@@ -275,7 +306,9 @@ public class ParentHomeActivity extends AppCompatActivity {
 
 
     // Edit Child Method
-    private void updateChild(String childId, String name, String ageStr, String note) {
+    private void updateChild(String childId, String name, String ageStr, String note, String pbStr, String redActionStr,
+                             String yellowActionStr,
+                             String greenActionStr) {//changed here
         int age;
         try {
             age = Integer.parseInt(ageStr);
@@ -289,6 +322,29 @@ public class ParentHomeActivity extends AppCompatActivity {
         data.put("name", name);
         data.put("age", age);
         data.put("note", note);
+
+        if (!pbStr.isEmpty()) {
+            try {
+                int pb = Integer.parseInt(pbStr);
+                if (pb > 0) {
+                    data.put("pb", pb);
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "PB must be a number", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (!redActionStr.isEmpty()) {
+            data.put("redActionPlan", redActionStr);
+        }
+
+        if (!yellowActionStr.isEmpty()) {
+            data.put("yellowActionPlan", yellowActionStr);
+        }
+
+        if (!greenActionStr.isEmpty()) {
+            data.put("greenActionPlan", greenActionStr);
+        }
 
         db.collection("children")
                 .document(childId)
@@ -399,6 +455,134 @@ public class ParentHomeActivity extends AppCompatActivity {
         sendIntent.putExtra(Intent.EXTRA_TEXT, text);
 
         startActivity(Intent.createChooser(sendIntent, "Share invite code"));
+    }
+
+    //for FCM
+    private void startAlertListener() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        String parentUid = user.getUid();
+
+        final SharedPreferences prefs = getSharedPreferences("parent_prefs", MODE_PRIVATE);
+        final String keyLastSeen = "last_alert_seen_" + parentUid;
+        final long lastSeenFinal = prefs.getLong(keyLastSeen, 0L);
+
+        if (alertsListener != null) {
+            alertsListener.remove();
+            alertsListener = null;
+        }
+
+        alertsListener = db.collection("alerts")
+                .whereEqualTo("parentId", parentUid)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null) {
+                        return;
+                    }
+                    if (snap == null) return;
+
+                    long newLastSeen = lastSeenFinal;
+
+                    for (DocumentChange dc : snap.getDocumentChanges()) {
+                        if (dc.getType() == DocumentChange.Type.ADDED) {
+
+                            Timestamp ts = dc.getDocument().getTimestamp("timestamp");
+                            long tsMillis = (ts != null) ? ts.toDate().getTime() : System.currentTimeMillis();
+
+                            if (tsMillis <= lastSeenFinal) {
+                                continue;
+                            }
+
+                            String type = dc.getDocument().getString("type");
+                            String details = dc.getDocument().getString("details");
+                            String childId = dc.getDocument().getString("childId");
+
+                            showAlertFromChild(childId, type, details);
+
+                            if (tsMillis > newLastSeen) {
+                                newLastSeen = tsMillis;
+                            }
+                        }
+                    }
+                    if (newLastSeen > lastSeenFinal) {
+                        prefs.edit().putLong(keyLastSeen, newLastSeen).apply();
+                    }
+                });
+    }
+
+    private void showAlertFromChild(String childId, String type, String details) {
+        final String safeType;
+        final String safeDetails;
+        final String safeChildId;
+
+        if (type == null) {
+            safeType = "UNKNOWN";
+        } else {
+            safeType = type;
+        }
+
+        if (details == null || details.isEmpty()) {
+            safeDetails = "Your child has a new asthma alert (" + safeType + ").";
+        } else {
+            safeDetails = details;
+        }
+
+        if (childId == null || childId.isEmpty()) {
+            safeChildId = "unknown";
+        } else {
+            safeChildId = childId;
+        }
+
+        db.collection("children")
+                .document(safeChildId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String childName = safeChildId;
+                    if (doc.exists()) {
+                        String name = doc.getString("name");
+                        if (name != null && !name.isEmpty()) {
+                            childName = name;
+                        }
+                    }
+                    String message = "Child: " + childName + "\n"
+                            + "Type: " + safeType + "\n\n"
+                            + safeDetails;
+
+                    new AlertDialog.Builder(this)
+                            .setTitle("Alert from your child")
+                            .setMessage(message)
+                            .setPositiveButton("OK", null)
+                            .show();
+                })
+                .addOnFailureListener(e -> {
+                    String message = "Child: " + safeChildId + "\n"
+                            + "Type: " + safeType + "\n\n"
+                            + safeDetails;
+
+                    new AlertDialog.Builder(this)
+                            .setTitle("Alert from your child")
+                            .setMessage(message)
+                            .setPositiveButton("OK", null)
+                            .show();
+                });
+    }
+
+    //for fcm and always be the last function
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startAlertListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (alertsListener != null) {
+            alertsListener.remove();
+            alertsListener = null;
+        }
     }
 }
 

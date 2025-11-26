@@ -10,33 +10,29 @@ import androidx.core.view.WindowInsetsCompat;
 import android.content.Intent;
 import android.widget.Button;
 import android.widget.Toast;
+import android.content.SharedPreferences;
+import android.widget.TextView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ChildHomeActivity extends AppCompatActivity {
 
-//    private FirebaseFirestore db;
-//    private FirebaseAuth auth;
     private String childId;
+    private TextView zoneText;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_child_home);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
-//        // Firebase
-//        db = FirebaseFirestore.getInstance();
-//        auth = FirebaseAuth.getInstance();
-//        FirebaseUser user = auth.getCurrentUser();
+        String idFromIntent = getIntent().getStringExtra("childId");
+        if (idFromIntent != null && !idFromIntent.isEmpty()) {
+            childId = idFromIntent;
+        }
 
+        Toast.makeText(this, "ChildHome for: " + childId, Toast.LENGTH_SHORT).show();
+
+        zoneText = findViewById(R.id.zone);
         Button check = findViewById(R.id.check);
         Button log = findViewById(R.id.log);
         Button help = findViewById(R.id.help);
@@ -44,6 +40,8 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button practice = findViewById(R.id.practice);
         Button progress = findViewById(R.id.progress);
         Button history = findViewById(R.id.history);
+        Button pefButton = findViewById(R.id.PEF);
+
 
         childId = getIntent().getStringExtra("childId");
         if (check != null) {
@@ -60,10 +58,13 @@ public class ChildHomeActivity extends AppCompatActivity {
             );
         }
         if (help != null) {
-            help.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO: Breathing help / triage screen for R4", Toast.LENGTH_SHORT).show()
-            );
+            help.setOnClickListener(v -> {
+                Intent i = new Intent(ChildHomeActivity.this, TriageActivity.class);
+                i.putExtra("childId", childId);
+                startActivity(i);
+            });
         }
+
         if (practice != null) {
             practice.setOnClickListener(v ->
                     Toast.makeText(this, "TODO:practice helper for R3", Toast.LENGTH_SHORT).show()
@@ -85,6 +86,38 @@ public class ChildHomeActivity extends AppCompatActivity {
                 startActivity(i);
                 finish();
             });
+        }
+        if (pefButton != null) {
+            pefButton.setOnClickListener(v -> {
+                Intent i = new Intent(ChildHomeActivity.this, PEFActivity.class);
+                i.putExtra("childId", childId);
+                startActivity(i);
+            });
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateZoneText();
+    }
+
+    private void updateZoneText() {
+        if (zoneText == null) return;
+
+        SharedPreferences prefs = getSharedPreferences("child_prefs", MODE_PRIVATE);
+        String prefix = "child_" + childId + "_";
+
+        int lastPef = prefs.getInt(prefix + "last_pef", -1);
+        String lastZone = prefs.getString(prefix + "last_zone", null);
+
+        if (lastZone == null) {
+            zoneText.setText("Hi, Today you are in the zone unknown");
+        } else if (lastPef == -1) {
+            zoneText.setText("Hi, Today you are in the " + lastZone + " zone");
+        } else {
+            zoneText.setText("Hi, Today you are in the " + lastZone
+                    + " zone (PEF " + lastPef + ")");
         }
     }
 }
