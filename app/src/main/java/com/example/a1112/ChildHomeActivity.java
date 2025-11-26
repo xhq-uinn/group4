@@ -76,9 +76,11 @@ public class ChildHomeActivity extends AppCompatActivity {
             );
         }
         if (history != null) {
-            history.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO: History for R5", Toast.LENGTH_SHORT).show()
-            );
+            history.setOnClickListener(v -> {
+                Intent i = new Intent(ChildHomeActivity.this, HistoryActivity.class);
+                i.putExtra("childId", childId);
+                startActivity(i);
+            });
         }
         if (out != null) {
             out.setOnClickListener(v -> {

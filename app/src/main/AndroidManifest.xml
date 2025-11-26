@@ -21,6 +21,9 @@
             android:name=".Parent_Setting_Activity"
             android:exported="false" />
         <activity
+            android:name=".HistoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".DailyCheckInActivity"
             android:exported="false" />
         <activity

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Step Title -->
+        <TextView
+            android:id="@+id/tvStepTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Step 1: Prepare Your Inhaler"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:paddingBottom="8dp"/>
+
+        <!-- Step Description -->
+        <TextView
+            android:id="@+id/tvStepDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remove the mouthpiece cap and shake before use."
+            android:textSize="16sp"
+            android:paddingBottom="16dp"/>
+
+        <!-- Video Player -->
+        <com.google.android.exoplayer2.ui.PlayerView
+            android:id="@+id/videoStep"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="16dp"
+            android:background="#000000"
+            app:use_controller="false" />
+
+        <!-- Countdown Timer (for hold/wait steps) -->
+        <TextView
+            android:id="@+id/tvCountdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="20sp"
+            android:textColor="#FF2222"
+            android:visibility="gone"
+            android:paddingBottom="16dp"/>
+
+        <Button
+            android:id="@+id/btnNextStep"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Next Step"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:textAllCaps="false"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnRestart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Restart from Step 5"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFFFFF"
+            android:textAllCaps="false"
+            android:padding="12dp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+            android:id="@+id/llTechniqueQuality"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingTop="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Technique Session Quality"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnHighQuality"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="High Quality"
+                android:backgroundTint="#4CAF50"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnNormalQuality"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Normal"
+                android:backgroundTint="#2196F3"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"/>
+
+            <Button
+                android:id="@+id/btnNeedAssistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Need Assistance"
+                android:backgroundTint="#FF9800"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
