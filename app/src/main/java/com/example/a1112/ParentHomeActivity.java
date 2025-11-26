@@ -250,6 +250,21 @@ public class ParentHomeActivity extends AppCompatActivity {
         etPb.setInputType(InputType.TYPE_CLASS_NUMBER);
         layout.addView(etPb);
 
+        // Red Action Plan
+        final EditText etRedAction = new EditText(this);
+        etRedAction.setHint("Red zone action plan (optional)");
+        layout.addView(etRedAction);
+
+        // 🟡 Yellow Action Plan
+        final EditText etYellowAction = new EditText(this);
+        etYellowAction.setHint("Yellow zone action plan (optional)");
+        layout.addView(etYellowAction);
+
+        // Green Action Plan
+        final EditText etGreenAction = new EditText(this);
+        etGreenAction.setHint("Green zone action plan (optional)");
+        layout.addView(etGreenAction);
+
         // Note input
         final EditText etNote = new EditText(this);
         etNote.setHint("Note");
@@ -266,9 +281,13 @@ public class ParentHomeActivity extends AppCompatActivity {
             String newPbStr  = etPb.getText().toString().trim();
             String newNote = etNote.getText().toString().trim();
 
+            String redActionStr    = etRedAction.getText().toString().trim();
+            String yellowActionStr = etYellowAction.getText().toString().trim();
+            String greenActionStr  = etGreenAction.getText().toString().trim();
+
             // Validate required fields
             if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
-                updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr);//changed here
+                updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr, redActionStr, yellowActionStr, greenActionStr);//changed here
             } else {
                 Toast.makeText(this, "Name and Age are required", Toast.LENGTH_SHORT).show();
             }
@@ -280,7 +299,9 @@ public class ParentHomeActivity extends AppCompatActivity {
 
 
     // Edit Child Method
-    private void updateChild(String childId, String name, String ageStr, String note, String pbStr) {//changed here
+    private void updateChild(String childId, String name, String ageStr, String note, String pbStr, String redActionStr,
+                             String yellowActionStr,
+                             String greenActionStr) {//changed here
         int age;
         try {
             age = Integer.parseInt(ageStr);
@@ -304,6 +325,18 @@ public class ParentHomeActivity extends AppCompatActivity {
             } catch (NumberFormatException e) {
                 Toast.makeText(this, "PB must be a number", Toast.LENGTH_SHORT).show();
             }
+        }
+
+        if (!redActionStr.isEmpty()) {
+            data.put("redActionPlan", redActionStr);
+        }
+
+        if (!yellowActionStr.isEmpty()) {
+            data.put("yellowActionPlan", yellowActionStr);
+        }
+
+        if (!greenActionStr.isEmpty()) {
+            data.put("greenActionPlan", greenActionStr);
         }
 
         db.collection("children")

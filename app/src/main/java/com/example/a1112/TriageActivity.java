@@ -42,6 +42,21 @@ public class TriageActivity extends AppCompatActivity {
     private int lastPef = -1;
 
 
+    private String redActionPlan = "Call Emergency Now.\n"
+            + "- Follow your RED zone steps from the action plan.\n"
+            + "- Use your rescue inhaler.\n"
+            + "- Contact your parent or doctor right away.\n";
+
+    private String yellowActionPlan = "You are in the YELLOW zone.\n"
+            + "- Use your rescue inhaler as in the action plan.\n"
+            + "- Slow down activity and rest.\n"
+            + "- Re-check later and tell your parent.\n";
+
+    private String greenActionPlan = "You are in the GREEN zone.\n"
+            + "- Keep your controller medicine as usual.\n"
+            + "- Watch your symptoms and tell an adult if you feel worse.\n";
+
+    // UI
     private CheckBox cbCantSpeak;
     private CheckBox cbChestPull;
     private CheckBox cbBlueLips;
@@ -57,8 +72,6 @@ public class TriageActivity extends AppCompatActivity {
 
 
     private CountDownTimer recheckTimer;
-    private boolean firstRun = true;
-    private String initialZone = "UNKNOWN";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,8 +107,7 @@ public class TriageActivity extends AppCompatActivity {
         lastPef = prefs.getInt(prefsPrefix + "last_pef", -1);
 
 
-        loadPbFromFirestore();
-        loadParentIdFromFirestore();
+        loadChildConfigFromFirestore();
 
 
         cbCantSpeak = findViewById(R.id.cbCantSpeak);
@@ -117,8 +129,8 @@ public class TriageActivity extends AppCompatActivity {
         );
 
 
-        sendParentAlert("TRIAGE_SESSION_START",
-                "Child started a breathing triage session.");
+        sendParentAlert("TRIAGE_STARTED",
+                "Child opened the triage screen.");
 
         btnRun.setOnClickListener(v -> runTriage());
     }
@@ -130,43 +142,50 @@ public class TriageActivity extends AppCompatActivity {
     }
 
 
-    private void loadPbFromFirestore() {
+    private void loadChildConfigFromFirestore() {
         db.collection("children")
                 .document(childId)
                 .get()
                 .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        Long pbVal = doc.getLong("pb");
-                        if (pbVal != null && pbVal > 0) {
-                            pb = pbVal.intValue();
+                    if (!doc.exists()) return;
 
-                            SharedPreferences prefs =
-                                    getSharedPreferences("child_prefs", MODE_PRIVATE);
-                            prefs.edit()
-                                    .putInt(prefsPrefix + "pb", pb)
-                                    .apply();
-                        }
+
+                    Long pbVal = doc.getLong("pb");
+                    if (pbVal != null && pbVal > 0) {
+                        pb = pbVal.intValue();
+
+                        SharedPreferences prefs =
+                                getSharedPreferences("child_prefs", MODE_PRIVATE);
+                        prefs.edit()
+                                .putInt(prefsPrefix + "pb", pb)
+                                .apply();
+                    }
+
+
+                    String pid = doc.getString("parentId");
+                    if (pid != null && !pid.isEmpty()) {
+                        parentId = pid;
+                    }
+
+
+                    String red = doc.getString("redActionPlan");
+                    if (red != null && !red.trim().isEmpty()) {
+                        redActionPlan = red;
+                    }
+
+                    String yellow = doc.getString("yellowActionPlan");
+                    if (yellow != null && !yellow.trim().isEmpty()) {
+                        yellowActionPlan = yellow;
+                    }
+
+                    String green = doc.getString("greenActionPlan");
+                    if (green != null && !green.trim().isEmpty()) {
+                        greenActionPlan = green;
                     }
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this,
-                                "Failed to load PB: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
-    }
-
-
-    private void loadParentIdFromFirestore() {
-        db.collection("children")
-                .document(childId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        parentId = doc.getString("parentId");
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this,
-                                "Failed to load parentId: " + e.getMessage(),
+                                "Failed to load child config: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show());
     }
 
@@ -193,6 +212,12 @@ public class TriageActivity extends AppCompatActivity {
         boolean rapidRescue = rescueUses >= 3;
 
 
+        if (rapidRescue) {
+            sendParentAlert("RAPID_RESCUE",
+                    "Child used rescue inhaler 3+ times in 3 hours.");
+        }
+
+
         Integer usedPef = null;
         String pefStr = etCurrentPef.getText().toString().trim();
         if (!pefStr.isEmpty()) {
@@ -207,101 +232,77 @@ public class TriageActivity extends AppCompatActivity {
         }
 
         StringBuilder decision = new StringBuilder();
-        boolean emergency = false;
-        boolean startHomeSteps = false;
-        String zone = "UNKNOWN";
 
 
         if (hasRedFlag) {
+            // emergency status alert
+            sendParentAlert("EMERGENCY_STATUS",
+                    "Red flag symptoms detected. Emergency status.");
 
-            emergency = true;
-            zone = "RED";
-            decision.append("⚠️ Critical danger signs detected.\n\n")
-                    .append("Call Emergency Now.\n")
-                    .append("- Use your emergency inhaler as in your action plan.\n")
-                    .append("- Tell an adult immediately.\n");
-        } else {
-            if (usedPef != null && pb > 0) {
+            decision.append("⚠️ Red flag symptoms detected.\n\n")
+                    .append("CALL EMERGENCY NOW.\n\n")
+                    .append(redActionPlan)  // 使用父母配置的 red action plan（或默认）
+                    .append("\n\nSafety note: This is guidance, not a diagnosis. ")
+                    .append("If you feel very scared or get worse, call emergency.");
 
-                double ratio = (double) usedPef / pb;
+            tvDecision.setText(decision.toString());
 
-                if (ratio < 0.50) {
-                    emergency = true;
-                    zone = "RED";
-                    decision.append("Your breathing is in the RED zone based on PEF.\n\n")
-                            .append("Call Emergency Now.\n")
-                            .append("- Follow your RED zone steps from the action plan.\n")
-                            .append("- Use your rescue inhaler.\n")
-                            .append("- Contact your parent or doctor right away.\n");
-                } else if (ratio < 0.80) {
-                    startHomeSteps = true;
-                    zone = "YELLOW";
-                    decision.append("You are in the YELLOW zone.\n\n")
-                            .append("Start Home Steps:\n")
-                            .append("- Use your rescue inhaler as in the action plan.\n")
-                            .append("- Slow down activity and rest.\n")
-                            .append("- Re-check in 10 minutes.\n");
-                } else {
-                    startHomeSteps = true;
-                    zone = "GREEN";
-                    decision.append("You are in the GREEN zone.\n\n")
-                            .append("Home Steps:\n")
-                            .append("- Keep your controller medicine as usual.\n")
-                            .append("- Watch your symptoms and tell an adult if you feel worse.\n");
-                }
-            } else {
 
-                if (rapidRescue) {
-                    startHomeSteps = true;
-                    zone = "YELLOW";
-                    decision.append("You used your rescue inhaler 3+ times in 3 hours.\n\n")
-                            .append("Start Home Steps and tell your parent.\n")
-                            .append("- Follow the YELLOW zone steps in your action plan.\n")
-                            .append("- Re-check in 10 minutes.\n");
-                } else {
-                    startHomeSteps = true;
-                    zone = "GREEN";
-                    decision.append("No critical danger signs detected.\n\n")
-                            .append("Home Steps:\n")
-                            .append("- Use your rescue inhaler if you feel tight.\n")
-                            .append("- Rest and avoid triggers.\n")
-                            .append("- Re-check in 10 minutes if still uncomfortable.\n");
-                }
-            }
+            startRecheckTimerForEmergency();
+            return;
         }
 
-        decision.append("\n\nSafety note: This is guidance, not a diagnosis. ")
-                .append("If you feel very scared or get worse, call emergency.");
 
-        tvDecision.setText(decision.toString());
+        if (usedPef != null) {
+            if (pb <= 0) {
+                tvDecision.setText(
+                        "Your parent has not set a Personal Best (PB) yet.\n\n" +
+                                "Please ask your parent to set PB in their app.");
+                tvTimer.setText("");
+                stopRecheckTimer();
+                return;
+            }
 
+            double ratio = (double) usedPef / pb;
 
-        if (emergency) {
-            sendParentAlert("ESCALATION_EMERGENCY",
-                    "Triage recommended calling emergency.");
-            stopRecheckTimer();
-            tvTimer.setText("");
+            if (ratio < 0.50) {
+                decision.append("PEF is in the RED zone (<50% of PB).\n\n")
+                        .append(redActionPlan)
+                        .append("\n\nSafety note: This is guidance, not a diagnosis. ")
+                        .append("If red flag symptoms appear, call emergency.");
+
+            } else if (ratio < 0.80) {
+                decision.append("PEF is in the YELLOW zone (50–79% of PB).\n\n")
+                        .append(yellowActionPlan)
+                        .append("\n\nSafety note: This is guidance, not a diagnosis. ")
+                        .append("If you feel worse or new danger signs appear, call emergency.");
+            } else {
+                decision.append("PEF is in the GREEN zone (>=80% of PB).\n\n")
+                        .append(greenActionPlan)
+                        .append("\n\nSafety note: This is guidance, not a diagnosis. ")
+                        .append("If you feel worse, tell an adult.");
+            }
+
         } else {
             if (rapidRescue) {
-                sendParentAlert("RAPID_RESCUE",
-                        "Child used rescue medicine 3+ times in 3 hours.");
-            }
-
-            if (startHomeSteps) {
-                if (firstRun) {
-                    initialZone = zone;
-                    firstRun = false;
-                    startRecheckTimer();
-                }
+                decision.append("You used your rescue inhaler 3+ times in 3 hours.\n\n")
+                        .append(yellowActionPlan)
+                        .append("\n\nSafety note: This is guidance, not a diagnosis. ")
+                        .append("If danger signs appear, call emergency.");
             } else {
-                stopRecheckTimer();
-                tvTimer.setText("");
+                decision.append("No critical danger signs detected.\n\n")
+                        .append(greenActionPlan)
+                        .append("\n\nSafety note: This is guidance, not a diagnosis. ")
+                        .append("If you feel worse, tell an adult.");
             }
         }
+
+        tvDecision.setText(decision.toString());
+        stopRecheckTimer();
+        tvTimer.setText("");
     }
 
-
-    private void startRecheckTimer() {
+    private void startRecheckTimerForEmergency() {
         stopRecheckTimer();
 
         final long totalMillis = 10 * 60 * 1000L;
@@ -317,8 +318,8 @@ public class TriageActivity extends AppCompatActivity {
 
             @Override
             public void onFinish() {
-                tvTimer.setText("Time to re-check your breathing.");
-                showRecheckDialog();
+                tvTimer.setText("10 minutes passed. How do you feel?");
+                showEmergencyRecheckDialog();
             }
         };
         recheckTimer.start();
@@ -331,55 +332,38 @@ public class TriageActivity extends AppCompatActivity {
         }
     }
 
-
-    private void showRecheckDialog() {
+    private void showEmergencyRecheckDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Re-check your breathing")
+                .setTitle("After 10 minutes")
                 .setMessage("Do you feel better now?\n\n"
-                        + "Tap \"I'm better\" if your breathing is back to your normal GREEN zone.\n"
-                        + "Tap \"Still not good / new danger signs\" if you still feel bad or have new danger signs.")
+                        + "Tap \"I'm better\" if your breathing feels back to safe.\n"
+                        + "Tap \"Still not better\" to fill the triage again.")
                 .setPositiveButton("I'm better", (dialog, which) -> {
                     tvDecision.setText(
                             "Good job checking again.\n\n"
-                                    + "Keep following your home steps and controller medicine.\n"
-                                    + "Tell your parent if symptoms come back.");
+                                    + "Keep following your action plan and tell your parent.");
                     tvTimer.setText("");
                     stopRecheckTimer();
                 })
-                .setNegativeButton("Still not good / new danger signs", (dialog, which) -> {
-                    escalateAfterRecheck();
+                .setNegativeButton("Still not better", (dialog, which) -> {
+                    resetTriageInputs();
+                    tvDecision.setText(
+                            "Please fill the triage questions again and tap \"Run\".\n\n"
+                                    + "If you feel very scared or get worse, call emergency.");
+                    tvTimer.setText("");
+                    stopRecheckTimer();
                 })
                 .setCancelable(false)
                 .show();
     }
 
-    private void escalateAfterRecheck() {
-        String zoneInfo;
-        if ("RED".equals(initialZone)) {
-            zoneInfo = "You were already in the RED zone and are still not better.\n\n";
-        } else if ("YELLOW".equals(initialZone)) {
-            zoneInfo = "You were in the YELLOW zone and are still not better.\n\n";
-        } else {
-            zoneInfo = "Your breathing is still not better after home steps.\n\n";
-        }
-
-        StringBuilder msg = new StringBuilder();
-        msg.append(zoneInfo)
-                .append("Call Emergency Now.\n")
-                .append("- Follow your RED zone steps from the action plan.\n")
-                .append("- Use your rescue inhaler.\n")
-                .append("- Contact your parent or doctor right away.\n\n")
-                .append("Safety note: This is guidance, not a diagnosis. ")
-                .append("If you feel very scared or get worse, call emergency.");
-
-        tvDecision.setText(msg.toString());
-        tvTimer.setText("");
-        stopRecheckTimer();
-
-        sendParentAlert("ESCALATION_AFTER_RECHECK",
-                "Child was not better after 10-minute re-check. Emergency recommended.");
+    private void resetTriageInputs() {
+        cbCantSpeak.setChecked(false);
+        cbChestPull.setChecked(false);
+        cbBlueLips.setChecked(false);
+        etRescueUses.setText("");
+        etCurrentPef.setText("");
     }
-
 
     private void sendParentAlert(String type, String details) {
         SharedPreferences prefs = getSharedPreferences("child_prefs", MODE_PRIVATE);
@@ -389,11 +373,7 @@ public class TriageActivity extends AppCompatActivity {
                 .putString(prefsPrefix + "alert_details", details)
                 .apply();
 
-
         if (parentId == null || parentId.isEmpty()) {
-            Toast.makeText(this,
-                    "Alert saved locally, but no parent linked.",
-                    Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -405,14 +385,6 @@ public class TriageActivity extends AppCompatActivity {
         alert.put("timestamp", FieldValue.serverTimestamp());
 
         db.collection("alerts")
-                .add(alert)
-                .addOnSuccessListener(docRef ->
-                        Toast.makeText(this,
-                                "Parent alert queued (" + type + ")",
-                                Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e ->
-                        Toast.makeText(this,
-                                "Failed to queue alert: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+                .add(alert);
     }
 }
