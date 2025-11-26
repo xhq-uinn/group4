@@ -20,18 +20,28 @@
             android:layout_marginBottom="16dp"/>
 
         <!-- Date Range -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enter dates in format: MMM-dd-yyyy (e.g., Nov-01-2025)"
+            android:textSize="12sp"
+            android:textColor="#FF0000"
+            android:layout_marginBottom="4dp"/>
+
         <EditText
             android:id="@+id/edit_start_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Start date (e.g., Nov/01/2025)"
+            android:hint="Start date (Nov-01-2025)"
+            android:inputType="text"
             android:layout_marginBottom="8dp" />
 
         <EditText
             android:id="@+id/edit_end_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="End date (e.g., Nov/30/2025)"
+            android:hint="End date (Nov-30-2025)"
+            android:inputType="text"
             android:layout_marginBottom="16dp" />
 
         <!-- Symptoms -->

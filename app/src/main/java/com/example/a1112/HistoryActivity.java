@@ -45,6 +45,10 @@ public class HistoryActivity extends AppCompatActivity {
         bindViews();
         setupFilterButton();
         setupExportButton();
+
+        // 提示用户输入日期格式
+        startDateEdit.setHint("Start date (e.g., Nov-01-2025)");
+        endDateEdit.setHint("End date (e.g., Nov-30-2025)");
     }
 
     /** Bind all UI components */
@@ -93,7 +97,6 @@ public class HistoryActivity extends AppCompatActivity {
         String start = startDateEdit.getText().toString().trim();
         String end = endDateEdit.getText().toString().trim();
 
-        // Parse start and end dates as numbers: YYYYMMDD
         long startNum = parseDateToNumber(start);
         long endNum = parseDateToNumber(end);
 
@@ -127,11 +130,10 @@ public class HistoryActivity extends AppCompatActivity {
                         // Skip if outside start/end range
                         if (docNum < startNum || docNum > endNum) continue;
 
-                        // Symptom matching
+                        // Symptom matching: 只要勾选了就显示
                         boolean matchSymptom = selectedSymptoms.isEmpty();
                         for (String s : selectedSymptoms) {
-                            String value = doc.getString(s);
-                            if (value != null && !value.equalsIgnoreCase("none")) {
+                            if (doc.contains(s)) {
                                 matchSymptom = true;
                                 break;
                             }
@@ -160,15 +162,15 @@ public class HistoryActivity extends AppCompatActivity {
                 });
     }
 
-    /** Convert a date string like "Nov/01/2025" to number YYYYMMDD for easy comparison */
+    /** Convert a date string like "Nov-26-2025" to number YYYYMMDD for easy comparison */
     private long parseDateToNumber(String dateStr) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MMM/dd/yyyy", Locale.ENGLISH);
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM-dd-yyyy", Locale.ENGLISH);
             Date date = sdf.parse(dateStr);
             Calendar cal = Calendar.getInstance();
             cal.setTime(date);
             int year = cal.get(Calendar.YEAR);
-            int month = cal.get(Calendar.MONTH) + 1; // Calendar.MONTH 从0开始
+            int month = cal.get(Calendar.MONTH) + 1;
             int day = cal.get(Calendar.DAY_OF_MONTH);
             return year * 10000L + month * 100 + day;
         } catch (ParseException e) {
@@ -176,7 +178,6 @@ public class HistoryActivity extends AppCompatActivity {
             return 0;
         }
     }
-
 
     private void addRecordView(Map<String, Object> record) {
         StringBuilder display = new StringBuilder();
