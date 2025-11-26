@@ -58,7 +58,7 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         // UI connect
         buttonAddChild = findViewById(R.id.btn_add_child);
-        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
+//        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
         childrenRecyclerView = findViewById(R.id.recycler_children);
         buttonSignOut = findViewById(R.id.btn_signout);
 
@@ -101,9 +101,9 @@ public class ParentHomeActivity extends AppCompatActivity {
         });
 
         // Invite provider button
-        buttonInviteProvider.setOnClickListener(v -> {
-            createInviteCode();
-        });
+//        buttonInviteProvider.setOnClickListener(v -> {
+//            createInviteCode();
+//        });
 
 
         //sign out

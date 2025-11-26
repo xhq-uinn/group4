@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
         <activity
+            android:name=".Parent_Setting_Activity"
+            android:exported="false" />
+        <activity
             android:name=".DailyCheckInActivity"
             android:exported="false" />
         <activity

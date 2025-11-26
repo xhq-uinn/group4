@@ -229,7 +229,9 @@ public class ProviderHomeActivity extends AppCompatActivity {
             .update("sharedProviders", FieldValue.arrayUnion(providerId))
             .addOnSuccessListener(result -> {
                 // Mark invite as used and record which provider used it
-                markInviteAsUsed(inviteCode, providerId);
+//                markInviteAsUsed(inviteCode, providerId);
+                //add child to linked list (mark invite as used built inside)
+                addChildToProviderList(childId, providerId, inviteCode);
             })
             .addOnFailureListener(e -> {
                 Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -273,6 +275,16 @@ public class ProviderHomeActivity extends AppCompatActivity {
         long sevenDaysInMillis = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
         //checks if current time to invite creation time has been longer than 7 days
         return (System.currentTimeMillis() - createdAt.getTime()) > sevenDaysInMillis;
+    }
+    private void addChildToProviderList(String childId, String providerId, String inviteCode) {
+        db.collection("users").document(providerId)
+                .update("linkedChildren", FieldValue.arrayUnion(childId))
+                .addOnSuccessListener(result -> {
+                    markInviteAsUsed(inviteCode, providerId);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error updating provider list: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     //overriding default onDestroy method to add the functionality of removing our real-time listener when activity is closed
