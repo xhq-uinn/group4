@@ -18,7 +18,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TriageActivity extends AppCompatActivity {
@@ -196,6 +198,18 @@ public class TriageActivity extends AppCompatActivity {
                         || cbChestPull.isChecked()
                         || cbBlueLips.isChecked();
 
+        //collect red flags for incident log
+        List<String> flags = new ArrayList<>();
+        if (cbCantSpeak.isChecked()) {
+            flags.add("cant_speak");
+        }
+        if (cbChestPull.isChecked()) {
+            flags.add("chest_pull");
+        }
+        if (cbBlueLips.isChecked()) {
+            flags.add("blue_lips");
+        }
+
 
         int rescueUses = 0;
         String rescueStr = etRescueUses.getText().toString().trim();
@@ -244,6 +258,10 @@ public class TriageActivity extends AppCompatActivity {
                     .append("If you feel very scared or get worse, call emergency.");
 
             tvDecision.setText(decision.toString());
+
+            //save to incident log(case emergency)
+
+            saveIncidentLog(flags, "call_emergency", "start_triage", usedPef);
 
 
             startRecheckTimerForEmergency();
@@ -298,6 +316,22 @@ public class TriageActivity extends AppCompatActivity {
         tvDecision.setText(decision.toString());
         stopRecheckTimer();
         tvTimer.setText("");
+
+        //save to incident log(case non-emergency)
+        String guidance;
+        if (usedPef != null && pb > 0) {
+            double ratio = (double) usedPef / pb;
+            if (ratio < 0.50) {
+                guidance = "call_emergency";
+            } else {
+                guidance = "home_steps";
+            }
+        } else {
+            guidance = "home_steps";
+        }
+
+        saveIncidentLog(flags, guidance, "start_triage", usedPef);
+
     }
 
     private void startRecheckTimerForEmergency() {
@@ -342,6 +376,15 @@ public class TriageActivity extends AppCompatActivity {
                                     + "Keep following your action plan and tell your parent.");
                     tvTimer.setText("");
                     stopRecheckTimer();
+
+                    //save to incident log
+                    List<String> flags = new ArrayList<>();
+                    saveIncidentLog(
+                            flags,
+                            "home_steps",
+                            "after_recheck_better",
+                            lastPef > 0 ? lastPef : null
+                    );
                 })
                 .setNegativeButton("Still not better", (dialog, which) -> {
                     resetTriageInputs();
@@ -350,6 +393,15 @@ public class TriageActivity extends AppCompatActivity {
                                     + "If you feel very scared or get worse, call emergency.");
                     tvTimer.setText("");
                     stopRecheckTimer();
+
+                    //save to incident log
+                    List<String> flags = new ArrayList<>();
+                    saveIncidentLog(
+                            flags,
+                            "call_emergency",
+                            "after_recheck_not_better",
+                            lastPef > 0 ? lastPef : null
+                    );
                 })
                 .setCancelable(false)
                 .show();
@@ -385,4 +437,24 @@ public class TriageActivity extends AppCompatActivity {
         db.collection("alerts")
                 .add(alert);
     }
+
+    //save incident log to database
+    private void saveIncidentLog(List<String> flags, String guidance, String userResponse, Integer pef) {
+        if (childId == null || childId.isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("flags", flags);              // red flags
+        data.put("guidance", guidance);        // guidance shown
+        data.put("userResponse", userResponse);// user response
+        data.put("pef", pef);                  // optional PEF
+        data.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("children")
+                .document(childId)
+                .collection("incidentLogs")
+                .add(data);
+    }
+
 }
