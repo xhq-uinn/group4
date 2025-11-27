@@ -36,9 +36,12 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     // UI
     private Button buttonAddChild;
+//    private Button buttonLinkChild;
     private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
+    private Button buttonInventory;
+    private Button buttonMedicineLog;
 
 
     // Firebase
@@ -66,6 +69,9 @@ public class ParentHomeActivity extends AppCompatActivity {
 //        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
         childrenRecyclerView = findViewById(R.id.recycler_children);
         buttonSignOut = findViewById(R.id.btn_signout);
+        buttonInventory = findViewById(R.id.buttonInventory);
+        buttonMedicineLog = findViewById(R.id.buttonMedicineLog);
+
 
         // Recycler setup
         childrenRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -98,6 +104,7 @@ public class ParentHomeActivity extends AppCompatActivity {
         childrenRecyclerView.setAdapter(childAdapter);
 
         // Load children
+//        loadChildren();
 
         // Add child button
         buttonAddChild.setOnClickListener(v -> {
@@ -110,6 +117,8 @@ public class ParentHomeActivity extends AppCompatActivity {
 //            createInviteCode();
 //        });
 
+//        //Link child button
+//        buttonLinkChild.setOnClickListener(v -> showLinkChildDialog());
 
         //sign out
         buttonSignOut.setOnClickListener(v -> {
@@ -122,6 +131,16 @@ public class ParentHomeActivity extends AppCompatActivity {
             finish();
         });
 
+        buttonInventory.setOnClickListener(v -> {
+            showChildSelectionForInventoryDialog();
+        });
+
+        buttonMedicineLog.setOnClickListener(v -> {
+            showChildSelectionForMedicineLogDialog();
+        });
+
+
+
     }
 
     @Override
@@ -132,6 +151,7 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     //Load children list
     private void loadChildren() {
+        //check user
         FirebaseUser user = auth.getCurrentUser();
 
         if (user == null) {
@@ -267,6 +287,7 @@ public class ParentHomeActivity extends AppCompatActivity {
         etYellowAction.setHint("Yellow zone action plan (optional)");
         layout.addView(etYellowAction);
 
+        // Note input
         // Green Action Plan
         final EditText etGreenAction = new EditText(this);
         etGreenAction.setHint("Green zone action plan (optional)");
@@ -296,7 +317,7 @@ public class ParentHomeActivity extends AppCompatActivity {
             if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
                 updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr, redActionStr, yellowActionStr, greenActionStr);//changed here
             } else {
-                Toast.makeText(this, "Name and Age are required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Name and DOB required", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -357,6 +378,14 @@ public class ParentHomeActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
+//    private void showDeleteChildDialog(Child child) {
+//        new AlertDialog.Builder(this)
+//                .setTitle("Delete Child")
+//                .setMessage("Are you sure you want to delete " + child.getName() + "?")
+//                .setPositiveButton("Delete", (dialog, which) -> deleteChild(child))
+//                .setNegativeButton("Cancel", null)
+//                .show();
+//    }
 
     // Delete Child Method
     private void deleteChild(Child child) {
@@ -397,7 +426,6 @@ public class ParentHomeActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-
 
 
 
@@ -587,6 +615,54 @@ public class ParentHomeActivity extends AppCompatActivity {
 }
 
 
+    //helper to display child selection to route to specific childs medicine log
+    private void showChildSelectionForMedicineLogDialog() {
+        if (childList.isEmpty()) {
+            Toast.makeText(this, "No children added yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Child for Medicine Log");
+        builder.setItems(childNames, (dialog, which) -> {
+            Child selectedChild = childList.get(which);
+            Intent intent = new Intent(ParentHomeActivity.this, MedicineLogActivity.class);
+            intent.putExtra("CHILD_ID", selectedChild.getId());
+            intent.putExtra("CHILD_NAME", selectedChild.getName());
+            intent.putExtra("USER_TYPE", "parent");
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
 
+    //helper to display child selection to route to specific childs inventory
+    private void showChildSelectionForInventoryDialog() {
+        if (childList.isEmpty()) {
+            Toast.makeText(this, "No children added yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Child for Medicines");
+        builder.setItems(childNames, (dialog, which) -> {
+            Child selectedChild = childList.get(which);
+            Intent intent = new Intent(ParentHomeActivity.this, InventoryActivity.class);
+            intent.putExtra("CHILD_ID", selectedChild.getId());
+            intent.putExtra("CHILD_NAME", selectedChild.getName());
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+}

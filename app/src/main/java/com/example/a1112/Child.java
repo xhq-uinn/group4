@@ -3,8 +3,7 @@ package com.example.a1112;
 import java.util.List;
 
 public class Child {
-
-    private String id;
+    private String id;  // Firestore document ID
     private String name;
     private int age;
     private String note;

@@ -14,15 +14,21 @@ import android.content.SharedPreferences;
 import android.widget.TextView;
 
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class ChildHomeActivity extends AppCompatActivity {
 
     private String childId;
     private TextView zoneText;
 
 
+    private String currentChildId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //EdgeToEdge.enable(this);
         setContentView(R.layout.activity_child_home);
 
         String idFromIntent = getIntent().getStringExtra("childId");
@@ -53,9 +59,18 @@ public class ChildHomeActivity extends AppCompatActivity {
             });
         }
         if (log != null) {
-            log.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO: Log medicine screen for R3", Toast.LENGTH_SHORT).show()
-            );
+            log.setOnClickListener(v -> {
+
+
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                currentChildId = currentUser.getUid();
+
+                Intent intent = new Intent(ChildHomeActivity.this, MedicineLogActivity.class);
+                intent.putExtra("CHILD_ID", currentChildId);
+                intent.putExtra("CHILD_NAME", "My");
+                intent.putExtra("USER_TYPE", "child");
+                startActivity(intent);
+            });
         }
         if (help != null) {
             help.setOnClickListener(v -> {

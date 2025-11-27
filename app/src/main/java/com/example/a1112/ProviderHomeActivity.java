@@ -10,35 +10,32 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
 public class ProviderHomeActivity extends AppCompatActivity {
 
     // Instance variables for UI components
+
     EditText inviteCodeEditText;
     Button submitButton;
     RecyclerView patientsRecyclerView;
-    Button buttonSelectPatient;
-    Button buttonSettings;
     Button buttonSignOut;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private ListenerRegistration patientsListener;
 
-
-
     // Stores data containing list of providers' patients
+
     List<String> patientList;
     String selectedPatient = null;
 
@@ -50,8 +47,8 @@ public class ProviderHomeActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-
         // Initialize UI components, data, and click listeners
+
         initializeViews();
         initializeData();
         setupPatientList();
@@ -59,17 +56,11 @@ public class ProviderHomeActivity extends AppCompatActivity {
     }
 
     void initializeViews() {
-
-        // Initialize UI components
-
         inviteCodeEditText = findViewById(R.id.inviteCodeEditText);
         submitButton = findViewById(R.id.submitButton);
         patientsRecyclerView = findViewById(R.id.patientsRecyclerView);
-        buttonSelectPatient = findViewById(R.id.buttonSelectPatient);
-        //buttonSettings = findViewById(R.id.buttonSettings); this line error so i changed it
         buttonSignOut = findViewById(R.id.buttonSignOut);
 
-        // Setup RecyclerView layout manager
         patientsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
 
@@ -79,96 +70,71 @@ public class ProviderHomeActivity extends AppCompatActivity {
     }
 
     void setupPatientList() {
-        PatientAdapter adapter = new PatientAdapter(patientList, new PatientAdapter.OnPatientClickListener() {
-            @Override
-            public void onPatientClick(String patientName) {
-                selectedPatient = patientName;
-                buttonSelectPatient.setEnabled(true);
-                buttonSelectPatient.setText("Selected Patient: " + patientName);
-                Toast.makeText(ProviderHomeActivity.this, "Selected: " + patientName, Toast.LENGTH_SHORT).show();
-            }
-        });
-
+        PatientAdapter adapter = new PatientAdapter(
+                patientList,
+                name -> {
+                    selectedPatient = name;
+                    Toast.makeText(this, "Selected: " + name, Toast.LENGTH_SHORT).show();
+                });
         patientsRecyclerView.setAdapter(adapter);
     }
 
     void setupClickListeners() {
 
-
-        // Invite code submission
+        // Provider submits invite code
         submitButton.setOnClickListener(v -> {
             String inviteCode = inviteCodeEditText.getText().toString().trim();
-            //display message for empty input
+
             if (inviteCode.isEmpty()) {
                 Toast.makeText(this, "Please enter an invite code", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // disable the button while checking and display "validating"
             submitButton.setEnabled(false);
             submitButton.setText("Validating...");
 
-            // Check if sumbitted invite code matches an invites id in the database
             db.collection("invites").document(inviteCode)
                     .get()
                     .addOnCompleteListener(task -> {
                         submitButton.setEnabled(true);
                         submitButton.setText("Submit");
 
-                        // Perform subsequent checks if we find a match to determine validity like (expiration, if used)
-                        if (task.isSuccessful() && task.getResult().exists()) {
-                            //get all the information about the invite code instance in the database
-                            DocumentSnapshot inviteDoc = task.getResult();
-                            Boolean used = inviteDoc.getBoolean("used");
-                            String parentId = inviteDoc.getString("parentId");
-                            String childId = inviteDoc.getString("childId");
-                            String usedByProviderId = inviteDoc.getString("usedByProviderId");
-                            Date createdAt = inviteDoc.getDate("createdAt");
-
-                            // Check if invite is valid
-
-                            //already used invite code
-                            if (used != null && used) {
-                                Toast.makeText(this, "This invite code has already been used", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-
-                            // Check if invite has expired (7 days)
-                            if (isInviteExpired(createdAt)) {
-                                Toast.makeText(this, "This invite code has expired", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-
-                            String providerId = getCurrentProviderId();
-                            //valid invite code, then we link the provider to the specific child.
-                            linkParentChildrenToProvider(childId, inviteCode, providerId);
-
-                        } else {
-                            //Display message for when the invite code does not match an invite id in database
-                            Toast.makeText(this, "Invalid invite code", Toast.LENGTH_SHORT).show();
+                        if (!task.isSuccessful()) {
+                            Toast.makeText(this, "Error validating code", Toast.LENGTH_SHORT).show();
+                            return;
                         }
+
+                        DocumentSnapshot inviteDoc = task.getResult();
+
+                        if (!inviteDoc.exists()) {
+                            Toast.makeText(this, "Invalid invite code", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        Boolean used = inviteDoc.getBoolean("used");
+                        String parentId = inviteDoc.getString("parentId");
+                        String childId = inviteDoc.getString("childId");
+                        Date createdAt = inviteDoc.getDate("createdAt");
+
+                        if (used != null && used) {
+                            Toast.makeText(this, "This code has already been used", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (createdAt == null || isInviteExpired(createdAt)) {
+                            Toast.makeText(this, "Invite code expired", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        String providerId = getCurrentProviderId();
+                        linkChildToProvider(childId, inviteCode, providerId);
                     })
                     .addOnFailureListener(e -> {
                         submitButton.setEnabled(true);
                         submitButton.setText("Submit");
-                        Toast.makeText(this, "Error validating code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Error validating code", Toast.LENGTH_SHORT).show();
                     });
         });
-
-
-        buttonSelectPatient.setOnClickListener(v -> {
-            if (selectedPatient != null) {
-                // Implement routing to patient details screen
-                Toast.makeText(this, "Showing details for: " + selectedPatient, Toast.LENGTH_SHORT).show();
-            }
-        });
-
-
-        buttonSettings.setOnClickListener(v -> {
-            // Implement routing to Settings activity
-            Toast.makeText(this, "Settings screen coming soon", Toast.LENGTH_SHORT).show();
-        });
-
 
         buttonSignOut.setOnClickListener(v -> {
             mAuth.signOut();
@@ -176,7 +142,6 @@ public class ProviderHomeActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
-
         });
     }
 
@@ -184,110 +149,64 @@ public class ProviderHomeActivity extends AppCompatActivity {
         String providerId = getCurrentProviderId();
         if (providerId == null) return;
 
-        // A real-time listener for all children who have the current provider in their list of sharedProviders
         patientsListener = db.collection("children")
                 .whereArrayContains("sharedProviders", providerId)
                 .addSnapshotListener((value, error) -> {
-                    if (error != null) {
-                        Toast.makeText(this, "Error loading patients", Toast.LENGTH_SHORT).show();
-                        return;
+                    if (error != null) return;
+                    if (value == null) return;
+
+                    patientList.clear();
+
+                    for (QueryDocumentSnapshot doc : value) {
+                        String name = doc.getString("name");
+                        if (name != null) {
+                            patientList.add(name);
+                        }
                     }
-                    //No error, we process the updated data and modify the list to be displayed accordingly
-                    if (value != null) {
-                        patientList.clear();
-                        // go over all matches to our query(children linked to current provider)
-                        //extract the child's name and add it to patient list
-                        for (QueryDocumentSnapshot document : value) {
-                            String patientName = document.getString("name");
-                            if (patientName != null) {
-                                patientList.add(patientName);
-                            }
-                        }
 
-                        // Then just update the recyclerview
-                        if (patientsRecyclerView.getAdapter() != null) {
-                            patientsRecyclerView.getAdapter().notifyDataSetChanged();
-                        }
-
-                        // Persistent display message if there are currently no children in the list
-                        if (patientList.isEmpty()) {
-                            Toast.makeText(this, "No patients found. Use invite codes to add patients.", Toast.LENGTH_LONG).show();
-                        }
+                    if (patientsRecyclerView.getAdapter() != null) {
+                        patientsRecyclerView.getAdapter().notifyDataSetChanged();
                     }
                 });
     }
 
-    private void linkParentChildrenToProvider(String childId, String inviteCode, String providerId) {
+    private void linkChildToProvider(String childId, String inviteCode, String providerId) {
         if (providerId == null) {
             Toast.makeText(this, "Error: Provider not authenticated", Toast.LENGTH_SHORT).show();
             return;
         }
 
-
-        // find the child
-        db.collection("children").document(childId)
-            .update("sharedProviders", FieldValue.arrayUnion(providerId))
-            .addOnSuccessListener(result -> {
-                // Mark invite as used and record which provider used it
-//                markInviteAsUsed(inviteCode, providerId);
-                //add child to linked list (mark invite as used built inside)
-                addChildToProviderList(childId, providerId, inviteCode);
-            })
-            .addOnFailureListener(e -> {
-                Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            });
-
+        db.collection("children")
+                .document(childId)
+                .update("sharedProviders", FieldValue.arrayUnion(providerId))
+                .addOnSuccessListener(aVoid -> markInviteAsUsed(inviteCode, providerId))
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
-    //gets the id of the user
-    private String getCurrentProviderId() {
-        if (mAuth.getCurrentUser() != null) {
-            return mAuth.getCurrentUser().getUid();
-        }
-        return null;
-    }
-    //marks an invite as used when used by a provider
     private void markInviteAsUsed(String inviteCode, String providerId) {
         db.collection("invites").document(inviteCode)
-                .update("used", true)
-                .addOnSuccessListener(result -> {
-                    markProviderUsed(inviteCode, providerId);
+                .update(
+                        "used", true,
+                        "usedByProviderId", providerId
+                )
+                .addOnSuccessListener(aVoid -> {
+                    inviteCodeEditText.setText("");
+                    Toast.makeText(this, "Child linked!", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error updating invite: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error updating invite", Toast.LENGTH_SHORT).show());
     }
 
-    private void markProviderUsed(String inviteCode, String providerId) {
-    db.collection("invites").document(inviteCode)
-            .update("usedByProviderId", providerId)
-            .addOnSuccessListener(result -> {
-                inviteCodeEditText.setText("");
-                Toast.makeText(this, "Patient linked successfully!", Toast.LENGTH_SHORT).show();
-            })
-            .addOnFailureListener(e -> {
-                Toast.makeText(this, "Error recording provider usage: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            });
-}
-    //checks if an invite has expired(7 days gone by) and returns True if expired
     private boolean isInviteExpired(Date createdAt) {
-
-        long sevenDaysInMillis = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-        //checks if current time to invite creation time has been longer than 7 days
-        return (System.currentTimeMillis() - createdAt.getTime()) > sevenDaysInMillis;
-    }
-    private void addChildToProviderList(String childId, String providerId, String inviteCode) {
-        db.collection("users").document(providerId)
-                .update("linkedChildren", FieldValue.arrayUnion(childId))
-                .addOnSuccessListener(result -> {
-                    markInviteAsUsed(inviteCode, providerId);
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error updating provider list: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        long sevenDaysMs = 7L * 24 * 60 * 60 * 1000;
+        return System.currentTimeMillis() - createdAt.getTime() > sevenDaysMs;
     }
 
-    //overriding default onDestroy method to add the functionality of removing our real-time listener when activity is closed
+    private String getCurrentProviderId() {
+        return mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -295,5 +214,4 @@ public class ProviderHomeActivity extends AppCompatActivity {
             patientsListener.remove();
         }
     }
-
 }
