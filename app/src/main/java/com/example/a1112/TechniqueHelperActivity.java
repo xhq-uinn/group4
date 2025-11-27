@@ -36,15 +36,15 @@ public class TechniqueHelperActivity extends AppCompatActivity {
     private int currentStepIndex = 0;
     private CountDownTimer countDownTimer;
 
-    private String childUID;
+    private String childId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_technique_helper);
 
-        childUID = getIntent().getStringExtra("childUID");
-        if (childUID == null || childUID.isEmpty()) {
+        childId = getIntent().getStringExtra("childId");
+        if (childId == null || childId.isEmpty()) {
             Toast.makeText(this, "Error: no child selected", Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -187,7 +187,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         sessionData.put("timestamp", FieldValue.serverTimestamp());
 
         db.collection("children")
-                .document(childUID)
+                .document(childId)
                 .collection("technique_sessions")
                 .add(sessionData)
                 .addOnSuccessListener(documentReference -> {

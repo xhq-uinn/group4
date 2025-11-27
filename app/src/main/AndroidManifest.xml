@@ -59,6 +59,9 @@
         <activity
             android:name=".ChildShareSettingsActivity"
             android:exported="false" />
+        <activity
+            android:name=".TechniqueHelperActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

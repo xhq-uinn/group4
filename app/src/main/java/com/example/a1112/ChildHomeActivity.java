@@ -66,9 +66,11 @@ public class ChildHomeActivity extends AppCompatActivity {
         }
 
         if (practice != null) {
-            practice.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO:practice helper for R3", Toast.LENGTH_SHORT).show()
-            );
+            practice.setOnClickListener(v -> {
+                Intent intent = new Intent(ChildHomeActivity.this, TechniqueHelperActivity.class);
+                intent.putExtra("childId", childId);
+                startActivity(intent);
+            });
         }
         if (progress != null) {
             progress.setOnClickListener(v ->
