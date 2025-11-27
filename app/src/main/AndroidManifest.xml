@@ -12,6 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
         <activity
+            android:name=".MotivationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MedicineLogActivity"
+            android:exported="false" />
+        <activity
+            android:name=".InventoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".PEFActivity"
             android:exported="false" />
         <activity

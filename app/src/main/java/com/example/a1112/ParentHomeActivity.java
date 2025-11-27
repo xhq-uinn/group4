@@ -36,7 +36,7 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     // UI
     private Button buttonAddChild;
-//    private Button buttonLinkChild;
+    //    private Button buttonLinkChild;
     private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
@@ -137,6 +137,12 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         buttonMedicineLog.setOnClickListener(v -> {
             showChildSelectionForMedicineLogDialog();
+        });
+
+        Button btnMotivationSettings = findViewById(R.id.btnMotivationSettings);
+        btnMotivationSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(ParentHomeActivity.this, ParentMotivationSettingsActivity.class);
+            startActivity(intent);
         });
 
 
@@ -612,8 +618,6 @@ public class ParentHomeActivity extends AppCompatActivity {
             alertsListener = null;
         }
     }
-}
-
 
     //helper to display child selection to route to specific childs medicine log
     private void showChildSelectionForMedicineLogDialog() {
@@ -665,4 +669,9 @@ public class ParentHomeActivity extends AppCompatActivity {
         builder.setNegativeButton("Cancel", null);
         builder.show();
     }
+
 }
+
+
+
+

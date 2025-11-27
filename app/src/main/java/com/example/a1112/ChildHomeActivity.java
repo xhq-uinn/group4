@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.firestore.FirebaseFirestore;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -12,10 +13,12 @@ import android.widget.Button;
 import android.widget.Toast;
 import android.content.SharedPreferences;
 import android.widget.TextView;
-
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.List;
 
 public class ChildHomeActivity extends AppCompatActivity {
 
@@ -62,8 +65,9 @@ public class ChildHomeActivity extends AppCompatActivity {
             log.setOnClickListener(v -> {
 
 
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                currentChildId = currentUser.getUid();
+//                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+//                currentChildId = currentUser.getUid();
+                currentChildId = childId;
 
                 Intent intent = new Intent(ChildHomeActivity.this, MedicineLogActivity.class);
                 intent.putExtra("CHILD_ID", currentChildId);
@@ -88,9 +92,11 @@ public class ChildHomeActivity extends AppCompatActivity {
             });
         }
         if (progress != null) {
-            progress.setOnClickListener(v ->
-                    Toast.makeText(this, "TODO: Motivation for R3", Toast.LENGTH_SHORT).show()
-            );
+            progress.setOnClickListener(v -> {
+                Intent intent = new Intent(ChildHomeActivity.this, MotivationActivity.class);
+                intent.putExtra("childId", childId);
+                startActivity(intent);
+            });
         }
         if (history != null) {
             history.setOnClickListener(v -> {
@@ -119,7 +125,11 @@ public class ChildHomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updateZoneText();
+        new MotivationCalculator().updateAllMotivation(childId, () -> {
+            loadMotivationUI();
+        });
     }
+
 
     private void updateZoneText() {
         if (zoneText == null) return;
@@ -138,5 +148,41 @@ public class ChildHomeActivity extends AppCompatActivity {
             zoneText.setText("Hi, Today you are in the " + lastZone
                     + " zone (PEF " + lastPef + ")");
         }
+    }
+    private void loadMotivationUI() {
+
+        TextView tvStreaks = findViewById(R.id.tvStreaks);
+        TextView tvBadges = findViewById(R.id.tvBadges);
+
+        FirebaseFirestore.getInstance()
+                .collection("children")
+                .document(childId)
+                .collection("motivation")
+                .document("status")
+                .get()
+                .addOnSuccessListener(doc -> {
+
+                    if (!doc.exists()) {
+                        tvStreaks.setText("No motivation data yet");
+                        return;
+                    }
+
+                    int c = doc.getLong("controllerStreak").intValue();
+                    int t = doc.getLong("techniqueStreak").intValue();
+
+                    tvStreaks.setText(
+                            "Controller Streak: " + c + " days\n" +
+                                    "Technique Streak: " + t + " days"
+                    );
+
+                    List<String> badges = (List<String>) doc.get("badges");
+                    if (badges == null || badges.isEmpty()) {
+                        tvBadges.setText("No badges yet");
+                    } else {
+                        StringBuilder sb = new StringBuilder("Badges:\n");
+                        for (String b : badges) sb.append("• ").append(b).append("\n");
+                        tvBadges.setText(sb.toString());
+                    }
+                });
     }
 }
