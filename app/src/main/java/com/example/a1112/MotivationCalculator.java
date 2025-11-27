@@ -18,7 +18,7 @@ public class MotivationCalculator {
 
     public void updateAllMotivation(String childId, Callback callback) {
 
-        // Step 1 — Load child's parentId
+        //get child's parentId
         db.collection("children").document(childId).get()
                 .addOnSuccessListener(childDoc -> {
                     if (!childDoc.exists()) {
@@ -29,18 +29,17 @@ public class MotivationCalculator {
                     String parentId = childDoc.getString("parentId");
                     if (parentId == null) parentId = "";
 
-                    // Step 2 — Load parent motivation settings
+                    // get parent motivation settings
                     loadSettings(parentId, settings ->
                             computeMotivation(childId, settings, callback));
 
                 });
     }
 
-    // --------------------------
-    // SETTINGS
-    // --------------------------
+//settings
 
     private static class Settings {
+        //default
         int controllerStreakTarget = 7;
         int techniqueStreakTarget = 7;
         int techniqueHighQualityCount = 10;
@@ -90,17 +89,10 @@ public class MotivationCalculator {
         void onLoaded(Settings s);
     }
 
-    // --------------------------
-    // MAIN COMPUTATION
-    // --------------------------
 
     private void computeMotivation(String childId, Settings settings, Callback callback) {
 
-        // 3 collections to load:
-        // 1. controller logs
-        // 2. technique sessions
-        // 3. rescue logs
-
+        // 1.controller logs, technique sessions, rescue logs
         AtomicInteger loaded = new AtomicInteger(0);
 
         List<MedicineLog> controllerLogs = new ArrayList<>();
@@ -113,7 +105,7 @@ public class MotivationCalculator {
             }
         };
 
-        // --- Load controller logs ---
+        //Load controller logs
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
                 .whereEqualTo("type", "controller")
@@ -127,7 +119,7 @@ public class MotivationCalculator {
                     tryFinish.run();
                 });
 
-        // --- Load rescue logs ---
+        //Load rescue logs
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
                 .whereEqualTo("type", "rescue")
@@ -141,7 +133,7 @@ public class MotivationCalculator {
                     tryFinish.run();
                 });
 
-        // --- Load technique logs ---
+        //Load technique logs
         db.collection("children")
                 .document(childId)
                 .collection("technique_sessions")
@@ -167,9 +159,6 @@ public class MotivationCalculator {
         }
     }
 
-    // --------------------------
-    // FINAL CALC
-    // --------------------------
 
     private void finishCompute(
             String childId,
@@ -180,11 +169,11 @@ public class MotivationCalculator {
             Callback callback
     ) {
 
-        // 1. Compute streaks
+        // Compute streaks
         int controllerStreak = computeControllerStreak(controllerLogs);
         int techniqueStreak = computeTechniqueStreak(techLogs);
 
-        // 2. Compute badges
+        // Compute badges
         List<String> badges = computeBadges(
                 settings,
                 controllerLogs,
@@ -192,7 +181,7 @@ public class MotivationCalculator {
                 techLogs
         );
 
-        // 3. Write to Firestore
+        //Write to Firestore
         Map<String, Object> data = new HashMap<>();
         data.put("controllerStreak", controllerStreak);
         data.put("techniqueStreak", techniqueStreak);
@@ -207,9 +196,8 @@ public class MotivationCalculator {
                 .addOnSuccessListener(v -> callback.onComplete());
     }
 
-    // --------------------------
+
     // Streak Computation
-    // --------------------------
 
     private int computeControllerStreak(List<MedicineLog> logs) {
         return computeDailyStreak(logs, log -> true);
@@ -284,9 +272,7 @@ public class MotivationCalculator {
         return streak;
     }
 
-    // --------------------------
     // Badge Computation
-    // --------------------------
 
     private List<String> computeBadges(
             Settings settings,

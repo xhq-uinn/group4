@@ -58,30 +58,37 @@
         app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
     <Button
         android:id="@+id/btnMotivationSettings"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Motivation Settings" />
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:text="Motivation Settings"
+        app:layout_constraintTop_toBottomOf="@id/btn_link_child"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <Button
         android:id="@+id/buttonMedicineLog"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="4dp"
         android:text="Medicine Log"
         app:layout_constraintEnd_toStartOf="@+id/buttonInventory"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle" />
+        app:layout_constraintTop_toBottomOf="@id/btnMotivationSettings" />
 
     <Button
         android:id="@+id/buttonInventory"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginStart="4dp"
         android:text="Manage Medicines"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/buttonMedicineLog"
-        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle" />
+        app:layout_constraintTop_toBottomOf="@id/btnMotivationSettings" />
 
 
     <!-- Recycler for Child List -->
