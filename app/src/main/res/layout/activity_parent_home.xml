@@ -56,11 +56,11 @@
         app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
-<!--    <Button-->
-<!--        android:id="@+id/btnMotivationSettings"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="Motivation Settings" />-->
+    <Button
+        android:id="@+id/btnMotivationSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Motivation Settings" />
     <Button
         android:id="@+id/buttonMedicineLog"
         android:layout_width="0dp"
