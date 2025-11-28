@@ -9,7 +9,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Share with Provider 标题 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -18,7 +17,24 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Rescue logs -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="8dp"
+            android:layout_marginBottom="16dp"
+            android:background="#F0F0F0">
+
+            <CheckBox
+                android:id="@+id/cbPermissionEnabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Overall Sharing Enabled"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,22 +44,11 @@
 
             <CheckBox
                 android:id="@+id/cbRescueLogs"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Rescue logs" />
-
-            <TextView
-                android:id="@+id/tvRescueSharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <!-- Controller adherence -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -53,22 +58,11 @@
 
             <CheckBox
                 android:id="@+id/cbController"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Controller adherence" />
-
-            <TextView
-                android:id="@+id/tvControllerSharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <!-- Symptoms -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -78,22 +72,11 @@
 
             <CheckBox
                 android:id="@+id/cbSymptoms"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Symptoms" />
-
-            <TextView
-                android:id="@+id/tvSymptomsSharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <!-- Triggers -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -103,22 +86,11 @@
 
             <CheckBox
                 android:id="@+id/cbTriggers"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Triggers" />
-
-            <TextView
-                android:id="@+id/tvTriggersSharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <!-- Peak-flow -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -128,22 +100,11 @@
 
             <CheckBox
                 android:id="@+id/cbPeakFlow"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Peak-flow" />
-
-            <TextView
-                android:id="@+id/tvPeakFlowSharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <!-- Triage incidents -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -153,22 +114,11 @@
 
             <CheckBox
                 android:id="@+id/cbTriage"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Triage incidents" />
-
-            <TextView
-                android:id="@+id/tvTriageSharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <!-- Summary charts -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -178,30 +128,10 @@
 
             <CheckBox
                 android:id="@+id/cbSummary"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="Summary charts" />
-
-            <TextView
-                android:id="@+id/tvSummarySharedTag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="• Shared"
-                android:textColor="#008000"
-                android:textStyle="italic"
-                android:visibility="gone"/>
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btnInviteProvider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Invite provider"
-            android:layout_gravity="end"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="4dp" />
     </LinearLayout>
-
-
 </ScrollView>

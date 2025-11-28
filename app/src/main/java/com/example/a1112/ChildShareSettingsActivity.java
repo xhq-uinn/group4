@@ -1,195 +1,167 @@
 package com.example.a1112;
 
-import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
+import android.util.Log; // Import Log for debugging
 import android.widget.CheckBox;
-import android.widget.TextView;
+import android.widget.CompoundButton;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ChildShareSettingsActivity extends AppCompatActivity {
 
-    private FirebaseAuth auth;
+    private static final String TAG = "ChildShareSettings";
+
+    private CheckBox cbPermissionEnabled; // Overall sharing control switch
+    private CheckBox cbRescueLogs, cbController, cbSymptoms, cbTriggers,
+            cbPeakFlow, cbTriage, cbSummary; // Detailed, granular sharing options
+
     private FirebaseFirestore db;
-    private String parentUid;
-    private String childId;
-
-    // Checkbox
-    private CheckBox cbRescue, cbController, cbSymptoms, cbTriggers, cbPeak, cbTriage, cbSummary;
-
-    // Shared tag textViews
-    private TextView tagRescue, tagController, tagSymptoms, tagTriggers, tagPeak, tagTriage, tagSummary;
-
-    private Button buttonInviteProvider;
+    private String inviteCode; // The unique code identifying the sharing relationship
+    private String childId;    // The ID of the child whose settings are being modified
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_child_share_settings);
 
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
-        parentUid = auth.getCurrentUser().getUid();
 
-        // get childId from parentHome
+        // Ensure Intent parameters are retrieved and handle missing data gracefully
+        inviteCode = getIntent().getStringExtra("inviteCode");
         childId = getIntent().getStringExtra("childId");
 
-        //initialize buttonInviteProvider
-        buttonInviteProvider = findViewById(R.id.btnInviteProvider);
-
-        initViews();
-        loadShareSettings();
-        setupToggleListeners();
-
-        // Invite provider button
-        buttonInviteProvider.setOnClickListener(v -> {
-            createInviteCode(childId);
-        });
-    }
-
-    private void initViews() {
-        cbRescue = findViewById(R.id.cbRescueLogs);
-        cbController = findViewById(R.id.cbController);
-        cbSymptoms = findViewById(R.id.cbSymptoms);
-        cbTriggers = findViewById(R.id.cbTriggers);
-        cbPeak = findViewById(R.id.cbPeakFlow);
-        cbTriage = findViewById(R.id.cbTriage);
-        cbSummary = findViewById(R.id.cbSummary);
-
-        tagRescue = findViewById(R.id.tvRescueSharedTag);
-        tagController = findViewById(R.id.tvControllerSharedTag);
-        tagSymptoms = findViewById(R.id.tvSymptomsSharedTag);
-        tagTriggers = findViewById(R.id.tvTriggersSharedTag);
-        tagPeak = findViewById(R.id.tvPeakFlowSharedTag);
-        tagTriage = findViewById(R.id.tvTriageSharedTag);
-        tagSummary = findViewById(R.id.tvSummarySharedTag);
-    }
-
-    private void loadShareSettings() {
-        DocumentReference docRef = db.collection("parents")
-                .document(parentUid)
-                .collection("children")
-                .document(childId)
-                .collection("settings")
-                .document("sharing");
-
-        docRef.get().addOnSuccessListener(doc -> {
-            if (doc.exists()) {
-                cbRescue.setChecked(doc.getBoolean("rescue") != null && doc.getBoolean("rescue"));
-                cbController.setChecked(doc.getBoolean("controller") != null && doc.getBoolean("controller"));
-                cbSymptoms.setChecked(doc.getBoolean("symptoms") != null && doc.getBoolean("symptoms"));
-                cbTriggers.setChecked(doc.getBoolean("triggers") != null && doc.getBoolean("triggers"));
-                cbPeak.setChecked(doc.getBoolean("peakflow") != null && doc.getBoolean("peakflow"));
-                cbTriage.setChecked(doc.getBoolean("triage") != null && doc.getBoolean("triage"));
-                cbSummary.setChecked(doc.getBoolean("summary") != null && doc.getBoolean("summary"));
-            }
-
-            updateSharedTags();
-        });
-    }
-
-    private void setupToggleListeners() {
-        cbRescue.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("rescue", isChecked));
-        cbController.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("controller", isChecked));
-        cbSymptoms.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("symptoms", isChecked));
-        cbTriggers.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("triggers", isChecked));
-        cbPeak.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("peakflow", isChecked));
-        cbTriage.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("triage", isChecked));
-        cbSummary.setOnCheckedChangeListener((buttonView, isChecked) -> updateFirestore("summary", isChecked));
-    }
-
-    private void updateFirestore(String field, boolean value) {
-        db.collection("parents")
-                .document(parentUid)
-                .collection("children")
-                .document(childId)
-                .collection("settings")
-                .document("sharing")
-                .update(field, value)
-                .addOnSuccessListener(aVoid -> updateSharedTags());
-    }
-
-    private void updateSharedTags() {
-        tagRescue.setVisibility(cbRescue.isChecked() ? TextView.VISIBLE : TextView.GONE);
-        tagController.setVisibility(cbController.isChecked() ? TextView.VISIBLE : TextView.GONE);
-        tagSymptoms.setVisibility(cbSymptoms.isChecked() ? TextView.VISIBLE : TextView.GONE);
-        tagTriggers.setVisibility(cbTriggers.isChecked() ? TextView.VISIBLE : TextView.GONE);
-        tagPeak.setVisibility(cbPeak.isChecked() ? TextView.VISIBLE : TextView.GONE);
-        tagTriage.setVisibility(cbTriage.isChecked() ? TextView.VISIBLE : TextView.GONE);
-        tagSummary.setVisibility(cbSummary.isChecked() ? TextView.VISIBLE : TextView.GONE);
-    }
-
-    //inviteProvider
-
-    private void createInviteCode(String childId) {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
+        if (inviteCode == null || childId == null) {
+            // Log error if essential data is missing
+            Log.e(TAG, "Missing inviteCode or childId");
+            Toast.makeText(this, "Configuration error: Missing invite details.", Toast.LENGTH_LONG).show();
+            // If parameters are missing, finish the Activity safely instead of crashing
+            finish();
             return;
         }
 
-        String parentId = user.getUid();
-        String code = generateCode(8);
+        db = FirebaseFirestore.getInstance();
 
-        Map<String, Object> inviteData = new HashMap<>();
-        inviteData.put("parentId", parentId);
-        inviteData.put("childId", childId);
-        inviteData.put("createdAt", FieldValue.serverTimestamp());
-        inviteData.put("used", false);
-        inviteData.put("usedByProviderId", null);
+        // Initialize CheckBox views from the layout
+        cbPermissionEnabled = findViewById(R.id.cbPermissionEnabled);
+        cbRescueLogs = findViewById(R.id.cbRescueLogs);
+        cbController = findViewById(R.id.cbController);
+        cbSymptoms = findViewById(R.id.cbSymptoms);
+        cbTriggers = findViewById(R.id.cbTriggers);
+        cbPeakFlow = findViewById(R.id.cbPeakFlow);
+        cbTriage = findViewById(R.id.cbTriage);
+        cbSummary = findViewById(R.id.cbSummary);
 
-        db.collection("invites")
-                .document(code)
-                .set(inviteData)
-                .addOnSuccessListener(unused -> showInviteDialog(code))
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
+        loadSharingSettings();
+        setupListeners();
     }
 
-    // code generator
-    private String generateCode(int length) {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
+    private void loadSharingSettings() {
+        // Reference to the Firestore document storing the sharing permissions
+        DocumentReference docRef = db.collection("children")
+                .document(childId)
+                .collection("sharingSettings")
+                .document(inviteCode);
+
+        docRef.get().addOnSuccessListener(snapshot -> {
+            if (!snapshot.exists()) return;
+
+            // Determine the state of the overall permission switch (defaults to true)
+            boolean permissionEnabled = Boolean.TRUE.equals(snapshot.getBoolean("permissionEnabled"));
+
+            // NEW: Load the state of the overall switch
+            cbPermissionEnabled.setChecked(permissionEnabled);
+
+            // Load the status of the other 7 detailed CheckBoxes
+            cbRescueLogs.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("rescueLogs")));
+            cbController.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("controllerAdherence")));
+            cbSymptoms.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("symptoms")));
+            cbTriggers.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("triggers")));
+            cbPeakFlow.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("peakFlow")));
+            cbTriage.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("triageIncidents")));
+            cbSummary.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("summaryCharts")));
+
+            // NEW: Based on the loaded overall status, enable or disable the detailed switches
+            setDetailedPermissionEnabled(permissionEnabled);
+        });
     }
 
-    // dialog
-    private void showInviteDialog(String code) {
-        new AlertDialog.Builder(this)
-                .setTitle("Invite Code")
-                .setMessage("Share this code with your provider:\n\n" + code)
-                .setPositiveButton("OK", null)
-                .setNeutralButton("Share", (d, w) -> shareInviteCode(code))
-                .show();
+    private void setDetailedPermissionEnabled(boolean isEnabled) {
+        cbRescueLogs.setEnabled(isEnabled);
+        cbController.setEnabled(isEnabled);
+        cbSymptoms.setEnabled(isEnabled);
+        cbTriggers.setEnabled(isEnabled);
+        cbPeakFlow.setEnabled(isEnabled);
+        cbTriage.setEnabled(isEnabled);
+        cbSummary.setEnabled(isEnabled);
     }
 
-    // system share
-    private void shareInviteCode(String code) {
-        String text = "Here is my SmartAir invite code: " + code;
-        Intent sendIntent = new Intent(Intent.ACTION_SEND);
-        sendIntent.setType("text/plain");
-        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
+    private void setupListeners() {
+        // General listener: used to map CheckBox ID to the corresponding Firestore field name
+        CompoundButton.OnCheckedChangeListener generalListener = (buttonView, isChecked) -> {
+            String field = null;
 
-        startActivity(Intent.createChooser(sendIntent, "Share invite code"));
+            // Determine the Firestore field name based on the CheckBox ID
+            if (buttonView.getId() == R.id.cbRescueLogs) {
+                field = "rescueLogs";
+            } else if (buttonView.getId() == R.id.cbController) {
+                field = "controllerAdherence";
+            } else if (buttonView.getId() == R.id.cbSymptoms) {
+                field = "symptoms";
+            } else if (buttonView.getId() == R.id.cbTriggers) {
+                field = "triggers";
+            } else if (buttonView.getId() == R.id.cbPeakFlow) {
+                field = "peakFlow";
+            } else if (buttonView.getId() == R.id.cbTriage) {
+                field = "triageIncidents";
+            } else if (buttonView.getId() == R.id.cbSummary) {
+                field = "summaryCharts";
+            }
+
+            if (field != null) {
+                updateSharingField(field, isChecked);
+            }
+        };
+
+        // Specific listener for the overall switch: handles Firestore update AND UI linkage
+        cbPermissionEnabled.setOnCheckedChangeListener((buttonView, isEnabled) -> {
+            // Update the 'permissionEnabled' field in Firestore
+            updateSharingField("permissionEnabled", isEnabled);
+
+            // UI Linkage: Enable or disable the other 7 detailed CheckBoxes
+            setDetailedPermissionEnabled(isEnabled);
+        });
+
+        // Attach the general Firestore update listener to the other 7 detailed CheckBoxes
+        cbRescueLogs.setOnCheckedChangeListener(generalListener);
+        cbController.setOnCheckedChangeListener(generalListener);
+        cbSymptoms.setOnCheckedChangeListener(generalListener);
+        cbTriggers.setOnCheckedChangeListener(generalListener);
+        cbPeakFlow.setOnCheckedChangeListener(generalListener);
+        cbTriage.setOnCheckedChangeListener(generalListener);
+        cbSummary.setOnCheckedChangeListener(generalListener);
     }
 
+    private void updateSharingField(String field, boolean value) {
+        Map<String, Object> update = new HashMap<>();
+        update.put(field, value);
 
+        db.collection("children")
+                .document(childId)
+                .collection("sharingSettings")
+                .document(inviteCode)
+                // Use SetOptions.merge() to update only the specified field without overwriting the whole document
+                .set(update, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, field + " updated successfully", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to update " + field, Toast.LENGTH_SHORT).show());
+    }
 }
