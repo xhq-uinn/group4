@@ -1,22 +1,15 @@
 package com.example.a1112;
 
-import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.firestore.FirebaseFirestore;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import android.content.Intent;
-import android.widget.Button;
-import android.widget.Toast;
 import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.widget.Button;
 import android.widget.TextView;
-import com.google.firebase.firestore.DocumentSnapshot;
+import android.widget.Toast;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 
@@ -25,18 +18,19 @@ public class ChildHomeActivity extends AppCompatActivity {
     private String childId;
     private TextView zoneText;
 
-
     private String currentChildId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //EdgeToEdge.enable(this);
         setContentView(R.layout.activity_child_home);
 
-        String idFromIntent = getIntent().getStringExtra("childId");
-        if (idFromIntent != null && !idFromIntent.isEmpty()) {
-            childId = idFromIntent;
+        childId = getIntent().getStringExtra("childId");
+        if (childId == null || childId.isEmpty()) {
+            Toast.makeText(this, "No childId passed to ChildHome", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(ChildHomeActivity.this, LoginActivity.class));
+            finish();
+            return;
         }
 
         Toast.makeText(this, "ChildHome for: " + childId, Toast.LENGTH_SHORT).show();
@@ -51,8 +45,6 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button history = findViewById(R.id.history);
         Button pefButton = findViewById(R.id.PEF);
 
-
-        childId = getIntent().getStringExtra("childId");
         if (check != null) {
             check.setOnClickListener(v -> {
                 Intent intent = new Intent(ChildHomeActivity.this, DailyCheckInActivity.class);
@@ -61,14 +53,10 @@ public class ChildHomeActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
         if (log != null) {
             log.setOnClickListener(v -> {
-
-
-//                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-//                currentChildId = currentUser.getUid();
                 currentChildId = childId;
-
                 Intent intent = new Intent(ChildHomeActivity.this, MedicineLogActivity.class);
                 intent.putExtra("CHILD_ID", currentChildId);
                 intent.putExtra("CHILD_NAME", "My");
@@ -76,6 +64,7 @@ public class ChildHomeActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
         if (help != null) {
             help.setOnClickListener(v -> {
                 Intent i = new Intent(ChildHomeActivity.this, TriageActivity.class);
@@ -91,6 +80,7 @@ public class ChildHomeActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
         if (progress != null) {
             progress.setOnClickListener(v -> {
                 Intent intent = new Intent(ChildHomeActivity.this, MotivationActivity.class);
@@ -98,6 +88,7 @@ public class ChildHomeActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
         if (history != null) {
             history.setOnClickListener(v -> {
                 Intent i = new Intent(ChildHomeActivity.this, HistoryActivity.class);
@@ -105,6 +96,7 @@ public class ChildHomeActivity extends AppCompatActivity {
                 startActivity(i);
             });
         }
+
         if (out != null) {
             out.setOnClickListener(v -> {
                 Intent i = new Intent(ChildHomeActivity.this, LoginActivity.class);
@@ -112,6 +104,7 @@ public class ChildHomeActivity extends AppCompatActivity {
                 finish();
             });
         }
+
         if (pefButton != null) {
             pefButton.setOnClickListener(v -> {
                 Intent i = new Intent(ChildHomeActivity.this, PEFActivity.class);
@@ -125,11 +118,11 @@ public class ChildHomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updateZoneText();
-        new MotivationCalculator().updateAllMotivation(childId, () -> {
-            loadMotivationUI();
-        });
-    }
 
+        if (childId != null && !childId.isEmpty()) {
+            new MotivationCalculator().updateAllMotivation(childId, this::loadMotivationUI);
+        }
+    }
 
     private void updateZoneText() {
         if (zoneText == null) return;
@@ -149,10 +142,15 @@ public class ChildHomeActivity extends AppCompatActivity {
                     + " zone (PEF " + lastPef + ")");
         }
     }
-    private void loadMotivationUI() {
 
+    private void loadMotivationUI() {
         TextView tvStreaks = findViewById(R.id.tvStreaks);
         TextView tvBadges = findViewById(R.id.tvBadges);
+
+
+        if (tvStreaks == null || tvBadges == null) {
+            return;
+        }
 
         FirebaseFirestore.getInstance()
                 .collection("children")
@@ -161,14 +159,16 @@ public class ChildHomeActivity extends AppCompatActivity {
                 .document("status")
                 .get()
                 .addOnSuccessListener(doc -> {
-
                     if (!doc.exists()) {
                         tvStreaks.setText("No motivation data yet");
+                        tvBadges.setText("");
                         return;
                     }
 
-                    int c = doc.getLong("controllerStreak").intValue();
-                    int t = doc.getLong("techniqueStreak").intValue();
+                    Long cLong = doc.getLong("controllerStreak");
+                    Long tLong = doc.getLong("techniqueStreak");
+                    int c = cLong != null ? cLong.intValue() : 0;
+                    int t = tLong != null ? tLong.intValue() : 0;
 
                     tvStreaks.setText(
                             "Controller Streak: " + c + " days\n" +
@@ -180,9 +180,14 @@ public class ChildHomeActivity extends AppCompatActivity {
                         tvBadges.setText("No badges yet");
                     } else {
                         StringBuilder sb = new StringBuilder("Badges:\n");
-                        for (String b : badges) sb.append("• ").append(b).append("\n");
+                        for (String b : badges) {
+                            sb.append("• ").append(b).append("\n");
+                        }
                         tvBadges.setText(sb.toString());
                     }
+                })
+                .addOnFailureListener(e -> {
+                    tvStreaks.setText("Failed to load motivation data");
                 });
     }
 }
