@@ -80,16 +80,27 @@ public class ChildDashboardHelper {
 
         long now = System.currentTimeMillis();
         long sevenDaysAgo = now - 7L * 24L * 60L * 60L * 1000L;
-        Timestamp fromTs = new Timestamp(new Date(sevenDaysAgo));
+        Date fromDate = new Date(sevenDaysAgo);
 
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
-                .whereEqualTo("type", "rescue")
-                .whereGreaterThanOrEqualTo("timestamp", fromTs)
                 .get()
                 .addOnSuccessListener(snapshot -> {
-                    int count = snapshot.size();
-                    if (count <= 0) {
+                    int count = 0;
+
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String type = doc.getString("type");
+                        if (!"rescue".equals(type)) continue;
+
+                        Timestamp ts = doc.getTimestamp("timestamp");
+                        if (ts == null) continue;
+
+                        if (!ts.toDate().before(fromDate)) {
+                            count++;
+                        }
+                    }
+
+                    if (count == 0) {
                         weekView.setText("0 times");
                     } else if (count == 1) {
                         weekView.setText("1 time");
@@ -97,8 +108,11 @@ public class ChildDashboardHelper {
                         weekView.setText(count + " times");
                     }
                 })
-                .addOnFailureListener(e -> weekView.setText("N/A"));
+                .addOnFailureListener(e -> {
+                    weekView.setText("N/A");
+                });
     }
+
 
     public static void loadLastRescue(String childId, TextView lastView) {
         if (childId == null || childId.isEmpty()) {
@@ -148,23 +162,25 @@ public class ChildDashboardHelper {
         long nowMs = System.currentTimeMillis();
         long dayMs = 24L * 60L * 60L * 1000L;
         long fromMs = nowMs - (days - 1L) * dayMs;
-
-        Timestamp fromTs = new Timestamp(new Date(fromMs));
+        Date fromDate = new Date(fromMs);
 
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
-                .whereEqualTo("type", "rescue")
-                .whereGreaterThanOrEqualTo("timestamp", fromTs)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     float[] counts = new float[days];
 
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        String type = doc.getString("type");
+                        if (!"rescue".equals(type)) continue;
+
                         Timestamp ts = doc.getTimestamp("timestamp");
                         if (ts == null) continue;
 
-                        long t = ts.toDate().getTime();
-                        long diffDays = (nowMs - t) / dayMs;
+                        Date d = ts.toDate();
+                        if (d.before(fromDate)) continue;
+
+                        long diffDays = (nowMs - d.getTime()) / dayMs;
                         if (diffDays < 0 || diffDays >= days) continue;
 
                         int index = (int) (days - 1 - diffDays);
@@ -177,5 +193,6 @@ public class ChildDashboardHelper {
                     chartView.setValues(new float[0]);
                 });
     }
+
 
 }
