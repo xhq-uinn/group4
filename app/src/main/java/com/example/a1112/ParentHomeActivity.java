@@ -88,9 +88,8 @@ public class ParentHomeActivity extends AppCompatActivity {
 
             @Override
             public void onShareSettings(Child child) {
-                Intent intent = new Intent(ParentHomeActivity.this, ChildShareSettingsActivity.class);
+                Intent intent = new Intent(ParentHomeActivity.this, ProviderListActivity.class);
                 intent.putExtra("childId", child.getId());
-                intent.putExtra("childName", child.getName());
                 startActivity(intent);
             }
 
@@ -433,43 +432,6 @@ public class ParentHomeActivity extends AppCompatActivity {
                 .show();
     }
 
-
-
-    // Provider invite code
-    private void createInviteCode() {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String parentId = user.getUid();
-        String code = generateCode(8);
-
-        Map<String, Object> inviteData = new HashMap<>();
-        inviteData.put("parentId", parentId);
-        inviteData.put("createdAt", FieldValue.serverTimestamp());
-        inviteData.put("used", false);
-
-        db.collection("invites")
-                .document(code)
-                .set(inviteData)
-                .addOnSuccessListener(unused -> showInviteDialog(code))
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    // code generator
-    private String generateCode(int length) {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
-    }
 
     // dialog
     private void showInviteDialog(String code) {

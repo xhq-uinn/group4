@@ -2,6 +2,7 @@ package com.example.a1112;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -16,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -179,10 +181,47 @@ public class ProviderHomeActivity extends AppCompatActivity {
         db.collection("children")
                 .document(childId)
                 .update("sharedProviders", FieldValue.arrayUnion(providerId))
-                .addOnSuccessListener(aVoid -> markInviteAsUsed(inviteCode, providerId))
+                .addOnSuccessListener(aVoid -> updateInviteAndSharingSettings(childId, inviteCode, providerId))
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
+
+
+    private void updateInviteAndSharingSettings(String childId, String inviteCode, String providerId) {
+        WriteBatch batch = db.batch();
+
+        // Update invites/{inviteCode} (Mark as used)
+        batch.update(
+                db.collection("invites").document(inviteCode),
+                "used", true,
+                "usedByProviderId", providerId
+        );
+
+        // Update children/{childId}/sharingSettings/{inviteCode} (Set providerId)
+        // This is the missing piece to populate the providerId field in the sharing settings document.
+        batch.update(
+                db.collection("children")
+                        .document(childId)
+                        .collection("sharingSettings")
+                        .document(inviteCode),
+                "providerId", providerId
+        );
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    inviteCodeEditText.setText("");
+                    Toast.makeText(this, "Child linked! Settings updated.", Toast.LENGTH_SHORT).show();
+                    // setupRealTimePatientUpdates() 会自动触发，更新列表
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ProviderHome", "Batch write failed: " + e.getMessage());
+                    Toast.makeText(this, "Error updating invite records.", Toast.LENGTH_SHORT).show();
+                });
+    }
+    private String getCurrentProviderId() {
+        return mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+    }
+
 
     private void markInviteAsUsed(String inviteCode, String providerId) {
         db.collection("invites").document(inviteCode)
@@ -203,9 +242,6 @@ public class ProviderHomeActivity extends AppCompatActivity {
         return System.currentTimeMillis() - createdAt.getTime() > sevenDaysMs;
     }
 
-    private String getCurrentProviderId() {
-        return mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
-    }
 
     @Override
     protected void onDestroy() {

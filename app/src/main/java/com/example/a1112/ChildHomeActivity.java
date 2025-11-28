@@ -51,6 +51,8 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button history = findViewById(R.id.history);
         Button pefButton = findViewById(R.id.PEF);
 
+
+//        childId = getIntent().getStringExtra("childId");
         if (check != null) {
             check.setOnClickListener(v -> {
                 Intent intent = new Intent(ChildHomeActivity.this, DailyCheckInActivity.class);
@@ -149,38 +151,38 @@ public class ChildHomeActivity extends AppCompatActivity {
     }
     private void loadMotivationUI() {
 
-        TextView tvStreaks = findViewById(R.id.tvStreaks);
-        TextView tvBadges = findViewById(R.id.tvBadges);
-
-        FirebaseFirestore.getInstance()
-                .collection("children")
-                .document(childId)
-                .collection("motivation")
-                .document("status")
-                .get()
-                .addOnSuccessListener(doc -> {
-
-                    if (!doc.exists()) {
-                        tvStreaks.setText("No motivation data yet");
-                        return;
-                    }
-
-                    int c = doc.getLong("controllerStreak").intValue();
-                    int t = doc.getLong("techniqueStreak").intValue();
-
-                    tvStreaks.setText(
-                            "Controller Streak: " + c + " days\n" +
-                                    "Technique Streak: " + t + " days"
-                    );
-
-                    List<String> badges = (List<String>) doc.get("badges");
-                    if (badges == null || badges.isEmpty()) {
-                        tvBadges.setText("No badges yet");
-                    } else {
-                        StringBuilder sb = new StringBuilder("Badges:\n");
-                        for (String b : badges) sb.append("• ").append(b).append("\n");
-                        tvBadges.setText(sb.toString());
-                    }
-                });
+////        TextView tvStreaks = findViewById(R.id.tvStreaks);
+////        TextView tvBadges = findViewById(R.id.tvBadges);
+//
+//        FirebaseFirestore.getInstance()
+//                .collection("children")
+//                .document(childId)
+//                .collection("motivation")
+//                .document("status")
+//                .get()
+//                .addOnSuccessListener(doc -> {
+//
+//                    if (!doc.exists()) {
+//                        tvStreaks.setText("No motivation data yet");
+//                        return;
+//                    }
+//
+//                    int c = doc.getLong("controllerStreak").intValue();
+//                    int t = doc.getLong("techniqueStreak").intValue();
+//
+//                    tvStreaks.setText(
+//                            "Controller Streak: " + c + " days\n" +
+//                                    "Technique Streak: " + t + " days"
+//                    );
+//
+//                    List<String> badges = (List<String>) doc.get("badges");
+//                    if (badges == null || badges.isEmpty()) {
+//                        tvBadges.setText("No badges yet");
+//                    } else {
+//                        StringBuilder sb = new StringBuilder("Badges:\n");
+//                        for (String b : badges) sb.append("• ").append(b).append("\n");
+//                        tvBadges.setText(sb.toString());
+//                    }
+//                });
     }
 }
