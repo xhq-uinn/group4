@@ -51,8 +51,6 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button history = findViewById(R.id.history);
         Button pefButton = findViewById(R.id.PEF);
 
-
-        childId = getIntent().getStringExtra("childId");
         if (check != null) {
             check.setOnClickListener(v -> {
                 Intent intent = new Intent(ChildHomeActivity.this, DailyCheckInActivity.class);
