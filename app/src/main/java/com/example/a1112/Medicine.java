@@ -44,7 +44,7 @@ public class Medicine {
         this.lastUpdatedAt = new Date();
         this.createdAt = new Date();
         this.flaggedLowByChild = false; // default to false because it cant be flagged before being part of inventory
-        this.flaggedAt = null;
+        this.flaggedAt = new Date();
     }
 
     //exclude getId and setId because there is no field id in firestore we just use document id

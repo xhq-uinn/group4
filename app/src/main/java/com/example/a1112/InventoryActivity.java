@@ -243,6 +243,8 @@ public class InventoryActivity extends AppCompatActivity {
         medicineData.put("lastUpdatedBy", medicine.getLastUpdatedBy());
         medicineData.put("lastUpdatedAt", medicine.getLastUpdatedAt());
         medicineData.put("createdAt", medicine.getCreatedAt());
+        medicineData.put("flaggedLowByChild", medicine.isFlaggedLowByChild());
+        medicineData.put("flaggedAt", medicine.getFlaggedAt());
 
         db.collection("medicines")
                 .add(medicineData)
@@ -271,6 +273,8 @@ public class InventoryActivity extends AppCompatActivity {
         updates.put("expiryDate", medicine.getExpiryDate());
         updates.put("lastUpdatedBy", medicine.getLastUpdatedBy());
         updates.put("lastUpdatedAt", medicine.getLastUpdatedAt());
+        updates.put("flaggedLowByChild", medicine.isFlaggedLowByChild());
+        updates.put("flaggedAt", medicine.getFlaggedAt());
 
         db.collection("medicines").document(medicine.getId())
                 .update(updates)

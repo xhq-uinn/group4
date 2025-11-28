@@ -373,7 +373,19 @@ public class MedicineLogActivity extends AppCompatActivity {
                 .update(updates)
                 .addOnSuccessListener(result -> {
                     Toast.makeText(this, "Rating saved!", Toast.LENGTH_SHORT).show();
-                    loadLogs(currentViewType); //reload logs to show the rating for the updated log
+
+                    // when post check feeling is worse send alert
+                    if ("Worse".equals(feeling)) {
+                        db.collection("medicineLogs").document(logId).get()
+                                .addOnSuccessListener(doc -> {
+                                    MedicineLog log = doc.toObject(MedicineLog.class);
+                                    if (log != null) {
+                                        worseAfterDoseAlert(log);
+                                    }
+                                });
+                    }
+
+                    loadLogs(currentViewType); //reload logs to show the rating for the medicine log item in the list
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Error saving rating", Toast.LENGTH_SHORT).show();
@@ -425,11 +437,20 @@ public class MedicineLogActivity extends AppCompatActivity {
         Map<String, Object> updates = new HashMap<>();
         updates.put("flaggedLowByChild", true);
         updates.put("flaggedAt", new Date());
+        updates.put("lastUpdatedBy", "child");
 
         db.collection("medicines").document(medicineId)
                 .update(updates)
                 .addOnSuccessListener(result -> {
                     Toast.makeText(this, "Medicine flagged as low", Toast.LENGTH_SHORT).show();
+
+                    //find medicine flagged low to get name and send alert
+                    for (Medicine med : medicines) {
+                        if (med.getId().equals(medicineId)) {
+                            medicineFlaggedLowAlert(med.getName());
+                            break;
+                        }
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Error flagging medicine", Toast.LENGTH_SHORT).show();
@@ -460,5 +481,46 @@ public class MedicineLogActivity extends AppCompatActivity {
         return spinner;
     }
 
+
+    private void worseAfterDoseAlert(MedicineLog log) {
+        //find the parent of the child and add a alert instance to the database with all details
+        db.collection("children").document(currentChildId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String parentId = documentSnapshot.getString("parentId");
+
+                        Map<String, Object> alertInfo = new HashMap<>();
+                        alertInfo.put("parentId", parentId);
+                        alertInfo.put("childId", currentChildId);
+                        alertInfo.put("type", "worse_after_dose");
+                        alertInfo.put("details", currentChildName + " felt worse after their dose of " + log.getMedicineName());
+                        alertInfo.put("timestamp", new Date());
+
+                        db.collection("alerts").add(alertInfo);
+            }
+        });
+    }
+
+    private void medicineFlaggedLowAlert(String medicineName) {
+
+        //find the parent of the child and add a alert instance to the database with all details
+        db.collection("children").document(currentChildId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String parentId = documentSnapshot.getString("parentId");
+
+                        Map<String, Object> alertInfo = new HashMap<>();
+                        alertInfo.put("parentId", parentId);
+                        alertInfo.put("childId", currentChildId);
+                        alertInfo.put("type", "medicine_flagged_low");
+                        alertInfo.put("details", currentChildName + " flagged " + medicineName + " as running low");
+                        alertInfo.put("timestamp", new Date());
+
+                        db.collection("alerts").add(alertInfo);
+                    }
+                });
+    }
 
 }
