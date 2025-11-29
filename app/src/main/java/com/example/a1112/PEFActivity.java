@@ -24,6 +24,7 @@ public class PEFActivity extends AppCompatActivity {
     private FirebaseFirestore db;
 
     private String childId;
+    private String parentId = null;
 
 
     private int pb = 350;
@@ -66,6 +67,7 @@ public class PEFActivity extends AppCompatActivity {
 
 
         loadPbFromFirestore();
+        loadParentIdFromFirestore();
 
         pefEdit = findViewById(R.id.PEFedit);
         save = findViewById(R.id.savePEF);
@@ -101,6 +103,23 @@ public class PEFActivity extends AppCompatActivity {
     }
 
 
+    private void loadParentIdFromFirestore() {
+        db.collection("children")
+                .document(childId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        parentId = doc.getString("parentId");
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Failed to load parentId: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+
+
     private void savePefAndShowZone() {
         if (pb <= 0) {
             Toast.makeText(this,
@@ -133,6 +152,13 @@ public class PEFActivity extends AppCompatActivity {
             zone = "RED";
         }
 
+        if ("RED".equals(zone)) {
+            sendParentAlert(
+                    "redzone",
+                    "Child's PEF is in the RED zone (PEF " + pef + ", PB " + pb + ")."
+            );
+        }
+
         SharedPreferences prefs = getSharedPreferences("child_prefs", MODE_PRIVATE);
         prefs.edit()
                 .putInt(prefsPrefix + "last_pef", pef)
@@ -162,6 +188,41 @@ public class PEFActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this,
                                 "Failed to save PEF log: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+
+    private void sendParentAlert(String type, String details) {
+        if (parentId == null || parentId.isEmpty()) {
+            Toast.makeText(this,
+                    "Alert saved locally, but no parent linked.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        SharedPreferences prefs = getSharedPreferences("child_prefs", MODE_PRIVATE);
+        prefs.edit()
+                .putString(prefsPrefix + "alert_type", type)
+                .putLong(prefsPrefix + "alert_time", System.currentTimeMillis())
+                .putString(prefsPrefix + "alert_details", details)
+                .apply();
+
+        Map<String, Object> alert = new HashMap<>();
+        alert.put("childId", childId);
+        alert.put("parentId", parentId);
+        alert.put("type", type);
+        alert.put("details", details);
+        alert.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("alerts")
+                .add(alert)
+                .addOnSuccessListener(docRef ->
+                        Toast.makeText(this,
+                                "Parent alert queued (redzone)",
+                                Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Failed to queue alert: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show());
     }
 }
