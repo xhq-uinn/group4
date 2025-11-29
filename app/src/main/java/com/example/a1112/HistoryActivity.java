@@ -58,7 +58,7 @@ public class HistoryActivity extends AppCompatActivity {
         setupFilterButton();
         setupExportButton();
 
-        startDateEdit.setHint("Start date (e.g., Nov-01-2025, default: 6 months ago)");
+        startDateEdit.setHint("Start date (e.g., Aug-01-2025, default: 6 months ago)");
         endDateEdit.setHint("End date (e.g., Nov-30-2025, default: today)");
     }
 
@@ -166,6 +166,20 @@ public class HistoryActivity extends AppCompatActivity {
 
         if (endCal.after(sixMonthLimit)) {
             Toast.makeText(this, "The date range cannot exceed six months. Please adjust your dates.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Check if date range is less than three months (Minimum limit)
+        Calendar threeMonthLimit = (Calendar) startCal.clone();
+        threeMonthLimit.add(Calendar.MONTH, 3);
+        // We set the time to the start of the day for accurate comparison if the difference is exactly 3 months
+        endCal.set(Calendar.HOUR_OF_DAY, 0);
+        endCal.set(Calendar.MINUTE, 0);
+        endCal.set(Calendar.SECOND, 0);
+
+        // If the end date is before the 3-month mark, the range is too small.
+        if (endCal.before(threeMonthLimit)) {
+            Toast.makeText(this, "The date range must be at least three months long. Please adjust your dates.", Toast.LENGTH_LONG).show();
             return;
         }
 
