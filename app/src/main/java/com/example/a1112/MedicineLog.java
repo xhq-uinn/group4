@@ -17,6 +17,7 @@ public class MedicineLog {
     private String medicineId;
     private String medicineName;
     private String type;
+    private String unitType;
     private int doseCount;
     private Date timestamp;
     private String loggedBy;
@@ -40,6 +41,9 @@ public class MedicineLog {
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public String getUnitType() { return unitType; }
+    public void setUnitType(String unitType) { this.unitType = unitType; }
 
     public int getDoseCount() { return doseCount; }
     public void setDoseCount(int doseCount) { this.doseCount = doseCount; }

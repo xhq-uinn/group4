@@ -62,13 +62,27 @@ public class MedicineLogAdapter extends RecyclerView.Adapter<MedicineLogAdapter.
             SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
             logTimeText.setText(timeFormat.format(log.getTimestamp()));
 
+            //initialize unit type to doses in case we cant get it from Medicinelog object
+            String unitType = "doses";
+            if (log.getUnitType() != null) {
+                unitType = log.getUnitType();
+            }
+
             int doseCount = log.getDoseCount();
             if (doseCount == 1) {
-                logDetailsText.setText(doseCount + " dose | Logged by " + log.getLoggedBy());
-
+                if (unitType == "puffs") {
+                    logDetailsText.setText( "1 puff | Logged by " + log.getLoggedBy());
+                }
+                else if (unitType == "measures") {
+                    logDetailsText.setText("1 measure | Logged by " + log.getLoggedBy());
+                }
+                else
+                {
+                    logDetailsText.setText(" 1 dose | Logged by " + log.getLoggedBy());
+                }
             }
             else {
-                logDetailsText.setText(doseCount + " doses | Logged by " + log.getLoggedBy());
+                logDetailsText.setText(doseCount + " " + unitType + " | Logged by " + log.getLoggedBy());
             }
 
 

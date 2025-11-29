@@ -23,10 +23,11 @@ import java.util.List;
 public class ChildHomeActivity extends AppCompatActivity {
 
     private String childId;
+    private String childName;
+    private FirebaseFirestore db;
     private TextView zoneText;
 
 
-    private String currentChildId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +52,32 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button history = findViewById(R.id.history);
         Button pefButton = findViewById(R.id.PEF);
 
+        db = FirebaseFirestore.getInstance();
+        childName = getIntent().getStringExtra("childName");
+
+        if (childName == null) {
+            //find name child name using id when it isnt passed with intent
+            db.collection("children").document(childId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+
+                        //always just set name to My if its not found/null/empty/fails
+                        if (documentSnapshot.exists()) {
+                            childName = documentSnapshot.getString("name");
+                            if (childName == null || childName.isEmpty()) {
+                                childName = "My";
+                            }
+                        }
+                        else
+                        {
+                            childName = "My";
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        childName = "My";
+                    });
+        }
+
 
 //        childId = getIntent().getStringExtra("childId");
         if (check != null) {
@@ -64,14 +91,9 @@ public class ChildHomeActivity extends AppCompatActivity {
         if (log != null) {
             log.setOnClickListener(v -> {
 
-
-//                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-//                currentChildId = currentUser.getUid();
-                currentChildId = childId;
-
                 Intent intent = new Intent(ChildHomeActivity.this, MedicineLogActivity.class);
-                intent.putExtra("CHILD_ID", currentChildId);
-                intent.putExtra("CHILD_NAME", "My");
+                intent.putExtra("CHILD_ID", childId);
+                intent.putExtra("CHILD_NAME", childName);
                 intent.putExtra("USER_TYPE", "child");
                 startActivity(intent);
             });

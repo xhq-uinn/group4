@@ -5,7 +5,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Child Name Header -->
     <TextView
         android:id="@+id/childNameText"
         android:layout_width="match_parent"
@@ -55,7 +54,7 @@
         android:padding="16dp"
         android:layout_marginBottom="16dp">
 
-        <!-- Type Selection -->
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -68,6 +67,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:entries="@array/medicine_types" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -85,6 +85,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Input Medicine Name"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/unitTypeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unit Type:"
+            android:visibility="gone"
+            android:textSize="16sp" />
+        <Spinner
+            android:id="@+id/unitTypeSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/medicine_units"
             android:visibility="gone"
             android:layout_marginBottom="12dp" />
 
@@ -120,6 +135,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:visibility="gone"
                 android:text="Rate Last Dose" />
         </LinearLayout>
     </LinearLayout>

@@ -32,9 +32,9 @@ import java.util.Map;
 public class MedicineLogActivity extends AppCompatActivity {
 
     // UI components
-    private TextView childNameText, logsHeaderText, noLogsText;
+    private TextView childNameText, logsHeaderText, noLogsText, unitTypeTitle;
     private Button buttonRescueLogs, buttonControllerLogs, buttonSubmitLog, buttonRateLastDose, buttonFlagLow, buttonHome;
-    private Spinner medicineSpinner, medicineTypeSpinner;
+    private Spinner medicineSpinner, medicineTypeSpinner, unitTypeSpinner;
     private EditText customMedicineInput, doseCountInput;
     private RecyclerView logsRecyclerView;
 
@@ -47,6 +47,8 @@ public class MedicineLogActivity extends AppCompatActivity {
     private List<MedicineLog> logs = new ArrayList<>();
     private List<Medicine> medicines = new ArrayList<>();
     private MedicineLogAdapter adapter;
+
+    private boolean fromInventory = false; // to distinguish custom medicine or selected from inventory
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +64,7 @@ public class MedicineLogActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         initializeViews();
-        setupCustomNameDisplay();
+        setupHiddenInputFields();
         setupClickListeners();
         loadMedicines();
         loadLogs(currentViewType);
@@ -80,6 +82,8 @@ public class MedicineLogActivity extends AppCompatActivity {
         buttonHome = findViewById(R.id.buttonHome);
         medicineTypeSpinner = findViewById(R.id.medicineTypeSpinner);
         medicineSpinner = findViewById(R.id.medicineSpinner);
+        unitTypeSpinner = findViewById(R.id.unitTypeSpinner);
+        unitTypeTitle = findViewById(R.id.unitTypeTitle);
         customMedicineInput = findViewById(R.id.customMedicineInput);
         doseCountInput = findViewById(R.id.doseCountInput);
         logsRecyclerView = findViewById(R.id.logsRecyclerView);
@@ -100,16 +104,22 @@ public class MedicineLogActivity extends AppCompatActivity {
     }
 
 
-    //when user selects other for medicine, make custom input for name visible
-    private void setupCustomNameDisplay() {
+    //when user selects other for medicine, make custom name input and unit type selector visible
+    private void setupHiddenInputFields() {
         medicineSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selected = parent.getItemAtPosition(position).toString();
                 if (selected.equals("Other (type name)")) {
                     customMedicineInput.setVisibility(View.VISIBLE);
+                    unitTypeSpinner.setVisibility(View.VISIBLE);
+                    unitTypeTitle.setVisibility(View.VISIBLE);
+                    fromInventory = false;
                 } else {
                     customMedicineInput.setVisibility(View.GONE);
+                    unitTypeSpinner.setVisibility(View.GONE);
+                    unitTypeTitle.setVisibility(View.GONE);
+                    fromInventory = true;
                 }
             }
 
@@ -149,6 +159,8 @@ public class MedicineLogActivity extends AppCompatActivity {
             else
             {
                 intent = new Intent(MedicineLogActivity.this, ChildHomeActivity.class);
+                intent.putExtra("childId", currentChildId);
+                intent.putExtra("childName", currentChildName);
             }
 
 
@@ -217,6 +229,7 @@ public class MedicineLogActivity extends AppCompatActivity {
 
         String selectedMedicine = medicineSpinner.getSelectedItem().toString();
         String selectedMedicineType = medicineTypeSpinner.getSelectedItem().toString();
+        String unitType = null;
         String medicineName;
         String medicineId = null;
 
@@ -228,14 +241,34 @@ public class MedicineLogActivity extends AppCompatActivity {
                 Toast.makeText(this, "Please enter medicine name", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            unitType = unitTypeSpinner.getSelectedItem().toString();
         }
         else
         {
             medicineName = selectedMedicine;
-            //loop through medicines to find the id of the selected medicine
+            //loop through medicines to find the id of the selected medicine and its unit type
             for (Medicine med : medicines) {
                 if (med.getName().equals(medicineName)) {
                     medicineId = med.getId();
+                    unitType = med.getUnitType();
+                    break;
+                }
+            }
+        }
+
+        //when a medicine is logged from inventory get its un
+        if (fromInventory) {
+            for (Medicine med : medicines) {
+                if (med.getName().equals(medicineName)) {
+                    String actualType = med.getType();
+
+                    if (!actualType.equals(selectedMedicineType)) {
+                        Toast.makeText(this,
+                                "Cannot log " + actualType + " medicine as " + selectedMedicineType + ". Please select correct type.",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     break;
                 }
             }
@@ -260,16 +293,17 @@ public class MedicineLogActivity extends AppCompatActivity {
 
 
         // save log to database
-        saveLogData(medicineId, medicineName, selectedMedicineType, doseCount);
+        saveLogData(medicineId, medicineName, selectedMedicineType, doseCount, unitType);
     }
 
     // Save log to database
-    private void saveLogData(String medicineId, String medicineName, String type, int doseCount) {
+    private void saveLogData(String medicineId, String medicineName, String type, int doseCount, String unitType) {
         Map<String, Object> logData = new HashMap<>();
         logData.put("childId", currentChildId);
         logData.put("medicineId", medicineId);
         logData.put("medicineName", medicineName);
         logData.put("type", type);
+        logData.put("unitType", unitType);
         logData.put("doseCount", doseCount);
         logData.put("timestamp", new Date());
         logData.put("loggedBy", userType);
@@ -281,6 +315,7 @@ public class MedicineLogActivity extends AppCompatActivity {
                     // reset the form so user can add new logs
                     doseCountInput.setText("");
                     customMedicineInput.setText("");
+                    medicineTypeSpinner.setSelection(0);
                     medicineSpinner.setSelection(0);
 
                     // reload the logs to show the updated logs if the user is viewing the same log type
