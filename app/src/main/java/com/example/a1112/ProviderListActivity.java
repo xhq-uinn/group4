@@ -26,7 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit; // Import TimeUnit (though not directly used in the logic)
 
-public class ProviderListActivity extends AppCompatActivity {
+public class ProviderListActivity extends AppCompatActivity
+        implements ProviderInviteAdapter.OnInviteActionListener { // Implement the interface for handling adapter actions
 
     private static final String TAG = "ProviderListActivity"; // Tag for logging
 
@@ -73,7 +74,8 @@ public class ProviderListActivity extends AppCompatActivity {
 
         // Initialize RecyclerView components
         providerList = new ArrayList<>();
-        adapter = new ProviderInviteAdapter(providerList, this, childId);
+        // 2. Update Adapter initialization: pass 'this' as the listener
+        adapter = new ProviderInviteAdapter(providerList, this, childId, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
@@ -84,9 +86,38 @@ public class ProviderListActivity extends AppCompatActivity {
         btnCreateInvite.setOnClickListener(v -> createInviteCode());
     }
 
-    /**
-     * Queries Firestore for all existing sharing settings (invites) for the current child.
-     */
+    @Override
+    public void onDeleteInvite(String inviteCode, int position) {
+        // Call the local method to execute the Firestore batch deletion
+        deleteInviteCode(inviteCode, position);
+    }
+    private void deleteInviteCode(String code, int position) {
+        WriteBatch batch = db.batch();
+
+        // Delete the sharingSettings document
+        batch.delete(db.collection("children")
+                .document(childId)
+                .collection("sharingSettings")
+                .document(code));
+
+        // Delete the invites metadata document
+        batch.delete(db.collection("invites").document(code));
+
+        // Commit the batch
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    // On successful Firestore deletion, update the local list and UI
+                    Toast.makeText(this, "Invite " + code + " revoked successfully.", Toast.LENGTH_SHORT).show();
+                    providerList.remove(position);
+                    adapter.notifyItemRemoved(position);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to revoke invite batch: " + code, e);
+                    Toast.makeText(this, "Failed to revoke invite: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    // Queries Firestore for all existing sharing settings (invites) for the current child.
     private void loadProviderInvites() {
         providerList.clear();
 
@@ -125,7 +156,7 @@ public class ProviderListActivity extends AppCompatActivity {
         String code = generateCode(8); // Generate an 8-character code
         WriteBatch batch = db.batch();
 
-        // 1. Set children/{childId}/sharingSettings/{code} document (Permissions)
+        // Set children/{childId}/sharingSettings/{code} document (Permissions)
         Map<String, Object> sharingSettingsData = new HashMap<>();
         sharingSettingsData.put("providerId", null); // Initial providerId is null
         sharingSettingsData.put("parentId", parentId);
@@ -147,7 +178,7 @@ public class ProviderListActivity extends AppCompatActivity {
                 .collection("sharingSettings")
                 .document(code), sharingSettingsData);
 
-        // 2. Set invites/{code} document (Metadata)
+        // Set invites/{code} document (Metadata)
         Map<String, Object> inviteMetadata = new HashMap<>();
         inviteMetadata.put("childId", childId);
         inviteMetadata.put("parentId", parentId);
