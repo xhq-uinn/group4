@@ -129,7 +129,8 @@ public class ChildHomeActivity extends AppCompatActivity {
         }
         if (out != null) {
             out.setOnClickListener(v -> {
-                Intent i = new Intent(ChildHomeActivity.this, LoginActivity.class);
+                FirebaseAuth.getInstance().signOut();
+                Intent i = new Intent(ChildHomeActivity.this, LoginActivityView.class);
                 startActivity(i);
                 finish();
             });

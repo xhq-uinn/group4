@@ -103,6 +103,19 @@
                 android:hint="Child Age"
                 android:inputType="number"
                 android:padding="12dp" />
+            <EditText
+                android:id="@+id/childUsernameField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Child Username (optional)"
+                android:inputType="text" />
+
+            <EditText
+                android:id="@+id/childPasswordField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Child Password (optional)"
+                android:inputType="textPassword" />
         </LinearLayout>
 
         <!-- Sign Up button -->
