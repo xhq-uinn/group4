@@ -29,10 +29,10 @@ public class MotivationActivity extends AppCompatActivity {
 //        tvBadges.setText("");
 
 
-        new MotivationCalculator().updateAllMotivation(childId, () -> {
+//        new MotivationCalculator().updateAllMotivation(childId, () -> {
             // load UI after calculating
             loadMotivationUI();
-        });
+//        });
     }
 
     private void loadMotivationUI() {
@@ -46,7 +46,7 @@ public class MotivationActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
 
                     if (!doc.exists()) {
-                        tvStreaks.setText("No motivation data yet");
+                        tvStreaks.setText("No data yet");
                         return;
                     }
 
