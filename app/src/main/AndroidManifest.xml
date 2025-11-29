@@ -12,6 +12,33 @@
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
         <activity
+            android:name=".ProviderListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MotivationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MedicineLogActivity"
+            android:exported="false" />
+        <activity
+            android:name=".InventoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PEFActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TriageActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Parent_Setting_Activity"
+            android:exported="false" />
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DailyCheckInActivity"
+            android:exported="false" />
+        <activity
             android:name=".ProviderHomeActivity"
             android:exported="false" />
         <activity
@@ -38,16 +65,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MainActivity" />
-
         <activity
             android:name=".AddChildActivity"
             android:exported="false" />
-
         <activity
             android:name=".ChildShareSettingsActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".TechniqueHelperActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

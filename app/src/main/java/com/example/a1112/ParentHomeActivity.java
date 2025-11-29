@@ -20,6 +20,10 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.ListenerRegistration;
+import android.content.SharedPreferences;
+import com.google.firebase.Timestamp;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -32,14 +36,18 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     // UI
     private Button buttonAddChild;
+    //    private Button buttonLinkChild;
     private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
+    private Button buttonInventory;
+    private Button buttonMedicineLog;
 
 
     // Firebase
     private FirebaseFirestore db;
     private FirebaseAuth auth;
+    private ListenerRegistration alertsListener;
 
     // children list
     private List<Child> childList = new ArrayList<>();
@@ -58,9 +66,12 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         // UI connect
         buttonAddChild = findViewById(R.id.btn_add_child);
-        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
+//        buttonInviteProvider = findViewById(R.id.btn_invite_provider);
         childrenRecyclerView = findViewById(R.id.recycler_children);
         buttonSignOut = findViewById(R.id.btn_signout);
+        buttonInventory = findViewById(R.id.buttonInventory);
+        buttonMedicineLog = findViewById(R.id.buttonMedicineLog);
+
 
         // Recycler setup
         childrenRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -77,8 +88,15 @@ public class ParentHomeActivity extends AppCompatActivity {
 
             @Override
             public void onShareSettings(Child child) {
-                Intent intent = new Intent(ParentHomeActivity.this, ChildShareSettingsActivity.class);
+                Intent intent = new Intent(ParentHomeActivity.this, ProviderListActivity.class);
                 intent.putExtra("childId", child.getId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onOpenChildHome(Child child) {
+                Intent intent = new Intent(ParentHomeActivity.this, ChildHomeActivity.class);
+                intent.putExtra("childId", child.getId());  // 传 childId
                 intent.putExtra("childName", child.getName());
                 startActivity(intent);
             }
@@ -86,6 +104,7 @@ public class ParentHomeActivity extends AppCompatActivity {
         childrenRecyclerView.setAdapter(childAdapter);
 
         // Load children
+//        loadChildren();
 
         // Add child button
         buttonAddChild.setOnClickListener(v -> {
@@ -94,10 +113,12 @@ public class ParentHomeActivity extends AppCompatActivity {
         });
 
         // Invite provider button
-        buttonInviteProvider.setOnClickListener(v -> {
-            createInviteCode();
-        });
+//        buttonInviteProvider.setOnClickListener(v -> {
+//            createInviteCode();
+//        });
 
+//        //Link child button
+//        buttonLinkChild.setOnClickListener(v -> showLinkChildDialog());
 
         //sign out
         buttonSignOut.setOnClickListener(v -> {
@@ -110,6 +131,22 @@ public class ParentHomeActivity extends AppCompatActivity {
             finish();
         });
 
+        buttonInventory.setOnClickListener(v -> {
+            showChildSelectionForInventoryDialog();
+        });
+
+        buttonMedicineLog.setOnClickListener(v -> {
+            showChildSelectionForMedicineLogDialog();
+        });
+
+        Button btnMotivationSettings = findViewById(R.id.btnMotivationSettings);
+        btnMotivationSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(ParentHomeActivity.this, ParentMotivationSettingsActivity.class);
+            startActivity(intent);
+        });
+
+
+
     }
 
     @Override
@@ -120,6 +157,7 @@ public class ParentHomeActivity extends AppCompatActivity {
 
     //Load children list
     private void loadChildren() {
+        //check user
         FirebaseUser user = auth.getCurrentUser();
 
         if (user == null) {
@@ -239,6 +277,28 @@ public class ParentHomeActivity extends AppCompatActivity {
         etAge.setText(String.valueOf(child.getAge())); // Convert int to String safely
         layout.addView(etAge);
 
+        // PB input （add here）
+        final EditText etPb = new EditText(this);
+        etPb.setHint("PB (optional)");
+        etPb.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(etPb);
+
+        // Red Action Plan
+        final EditText etRedAction = new EditText(this);
+        etRedAction.setHint("Red zone action plan (optional)");
+        layout.addView(etRedAction);
+
+        // 🟡 Yellow Action Plan
+        final EditText etYellowAction = new EditText(this);
+        etYellowAction.setHint("Yellow zone action plan (optional)");
+        layout.addView(etYellowAction);
+
+        // Note input
+        // Green Action Plan
+        final EditText etGreenAction = new EditText(this);
+        etGreenAction.setHint("Green zone action plan (optional)");
+        layout.addView(etGreenAction);
+
         // Note input
         final EditText etNote = new EditText(this);
         etNote.setHint("Note");
@@ -252,13 +312,18 @@ public class ParentHomeActivity extends AppCompatActivity {
         builder.setPositiveButton("Save", (dialog, which) -> {
             String newName = etName.getText().toString().trim();
             String newAgeStr = etAge.getText().toString().trim();
+            String newPbStr  = etPb.getText().toString().trim();
             String newNote = etNote.getText().toString().trim();
+
+            String redActionStr    = etRedAction.getText().toString().trim();
+            String yellowActionStr = etYellowAction.getText().toString().trim();
+            String greenActionStr  = etGreenAction.getText().toString().trim();
 
             // Validate required fields
             if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
-                updateChild(child.getId(), newName, newAgeStr, newNote);
+                updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr, redActionStr, yellowActionStr, greenActionStr);//changed here
             } else {
-                Toast.makeText(this, "Name and Age are required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Name and DOB required", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -268,7 +333,9 @@ public class ParentHomeActivity extends AppCompatActivity {
 
 
     // Edit Child Method
-    private void updateChild(String childId, String name, String ageStr, String note) {
+    private void updateChild(String childId, String name, String ageStr, String note, String pbStr, String redActionStr,
+                             String yellowActionStr,
+                             String greenActionStr) {//changed here
         int age;
         try {
             age = Integer.parseInt(ageStr);
@@ -283,6 +350,29 @@ public class ParentHomeActivity extends AppCompatActivity {
         data.put("age", age);
         data.put("note", note);
 
+        if (!pbStr.isEmpty()) {
+            try {
+                int pb = Integer.parseInt(pbStr);
+                if (pb > 0) {
+                    data.put("pb", pb);
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "PB must be a number", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (!redActionStr.isEmpty()) {
+            data.put("redActionPlan", redActionStr);
+        }
+
+        if (!yellowActionStr.isEmpty()) {
+            data.put("yellowActionPlan", yellowActionStr);
+        }
+
+        if (!greenActionStr.isEmpty()) {
+            data.put("greenActionPlan", greenActionStr);
+        }
+
         db.collection("children")
                 .document(childId)
                 .update(data)
@@ -294,6 +384,14 @@ public class ParentHomeActivity extends AppCompatActivity {
                         Toast.makeText(this, "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
+//    private void showDeleteChildDialog(Child child) {
+//        new AlertDialog.Builder(this)
+//                .setTitle("Delete Child")
+//                .setMessage("Are you sure you want to delete " + child.getName() + "?")
+//                .setPositiveButton("Delete", (dialog, which) -> deleteChild(child))
+//                .setNegativeButton("Cancel", null)
+//                .show();
+//    }
 
     // Delete Child Method
     private void deleteChild(Child child) {
@@ -336,44 +434,6 @@ public class ParentHomeActivity extends AppCompatActivity {
     }
 
 
-
-
-    // Provider invite code
-    private void createInviteCode() {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String parentId = user.getUid();
-        String code = generateCode(8);
-
-        Map<String, Object> inviteData = new HashMap<>();
-        inviteData.put("parentId", parentId);
-        inviteData.put("createdAt", FieldValue.serverTimestamp());
-        inviteData.put("used", false);
-
-        db.collection("invites")
-                .document(code)
-                .set(inviteData)
-                .addOnSuccessListener(unused -> showInviteDialog(code))
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    // code generator
-    private String generateCode(int length) {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
-        return sb.toString();
-    }
-
     // dialog
     private void showInviteDialog(String code) {
         new AlertDialog.Builder(this)
@@ -393,8 +453,187 @@ public class ParentHomeActivity extends AppCompatActivity {
 
         startActivity(Intent.createChooser(sendIntent, "Share invite code"));
     }
-}
 
+    //for FCM
+    private void startAlertListener() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return;
+        }
+
+        String parentUid = user.getUid();
+
+        final SharedPreferences prefs = getSharedPreferences("parent_prefs", MODE_PRIVATE);
+        final String keyLastSeen = "last_alert_seen_" + parentUid;
+        final long lastSeenFinal = prefs.getLong(keyLastSeen, 0L);
+
+        if (alertsListener != null) {
+            alertsListener.remove();
+            alertsListener = null;
+        }
+
+        alertsListener = db.collection("alerts")
+                .whereEqualTo("parentId", parentUid)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null) {
+                        return;
+                    }
+                    if (snap == null) return;
+
+                    long newLastSeen = lastSeenFinal;
+
+                    for (DocumentChange dc : snap.getDocumentChanges()) {
+                        if (dc.getType() == DocumentChange.Type.ADDED) {
+
+                            Timestamp ts = dc.getDocument().getTimestamp("timestamp");
+                            long tsMillis = (ts != null) ? ts.toDate().getTime() : System.currentTimeMillis();
+
+                            if (tsMillis <= lastSeenFinal) {
+                                continue;
+                            }
+
+                            String type = dc.getDocument().getString("type");
+                            String details = dc.getDocument().getString("details");
+                            String childId = dc.getDocument().getString("childId");
+
+                            showAlertFromChild(childId, type, details);
+
+                            if (tsMillis > newLastSeen) {
+                                newLastSeen = tsMillis;
+                            }
+                        }
+                    }
+                    if (newLastSeen > lastSeenFinal) {
+                        prefs.edit().putLong(keyLastSeen, newLastSeen).apply();
+                    }
+                });
+    }
+
+    private void showAlertFromChild(String childId, String type, String details) {
+        final String safeType;
+        final String safeDetails;
+        final String safeChildId;
+
+        if (type == null) {
+            safeType = "UNKNOWN";
+        } else {
+            safeType = type;
+        }
+
+        if (details == null || details.isEmpty()) {
+            safeDetails = "Your child has a new asthma alert (" + safeType + ").";
+        } else {
+            safeDetails = details;
+        }
+
+        if (childId == null || childId.isEmpty()) {
+            safeChildId = "unknown";
+        } else {
+            safeChildId = childId;
+        }
+
+        db.collection("children")
+                .document(safeChildId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String childName = safeChildId;
+                    if (doc.exists()) {
+                        String name = doc.getString("name");
+                        if (name != null && !name.isEmpty()) {
+                            childName = name;
+                        }
+                    }
+                    String message = "Child: " + childName + "\n"
+                            + "Type: " + safeType + "\n\n"
+                            + safeDetails;
+
+                    new AlertDialog.Builder(this)
+                            .setTitle("Alert from your child")
+                            .setMessage(message)
+                            .setPositiveButton("OK", null)
+                            .show();
+                })
+                .addOnFailureListener(e -> {
+                    String message = "Child: " + safeChildId + "\n"
+                            + "Type: " + safeType + "\n\n"
+                            + safeDetails;
+
+                    new AlertDialog.Builder(this)
+                            .setTitle("Alert from your child")
+                            .setMessage(message)
+                            .setPositiveButton("OK", null)
+                            .show();
+                });
+    }
+
+    //for fcm and always be the last function
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startAlertListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (alertsListener != null) {
+            alertsListener.remove();
+            alertsListener = null;
+        }
+    }
+
+    //helper to display child selection to route to specific childs medicine log
+    private void showChildSelectionForMedicineLogDialog() {
+        if (childList.isEmpty()) {
+            Toast.makeText(this, "No children added yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Child for Medicine Log");
+        builder.setItems(childNames, (dialog, which) -> {
+            Child selectedChild = childList.get(which);
+            Intent intent = new Intent(ParentHomeActivity.this, MedicineLogActivity.class);
+            intent.putExtra("CHILD_ID", selectedChild.getId());
+            intent.putExtra("CHILD_NAME", selectedChild.getName());
+            intent.putExtra("USER_TYPE", "parent");
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    //helper to display child selection to route to specific childs inventory
+    private void showChildSelectionForInventoryDialog() {
+        if (childList.isEmpty()) {
+            Toast.makeText(this, "No children added yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Child for Medicines");
+        builder.setItems(childNames, (dialog, which) -> {
+            Child selectedChild = childList.get(which);
+            Intent intent = new Intent(ParentHomeActivity.this, InventoryActivity.class);
+            intent.putExtra("CHILD_ID", selectedChild.getId());
+            intent.putExtra("CHILD_NAME", selectedChild.getName());
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+}
 
 
 

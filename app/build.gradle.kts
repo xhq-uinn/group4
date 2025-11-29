@@ -47,5 +47,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth:22.3.1")
     implementation("com.google.firebase:firebase-firestore:24.10.0")
+    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
 }
 apply(plugin = "com.google.gms.google-services")

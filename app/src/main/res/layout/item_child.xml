@@ -14,25 +14,24 @@
         android:text="Child Name"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:ellipsize="end"
+        android:singleLine="true"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btn_edit_child"
-        app:layout_constraintBottom_toTopOf="@id/textChildAge"
-        android:ellipsize="end"
-        android:singleLine="true"/>
+        app:layout_constraintEnd_toStartOf="@id/btn_edit_child" />
 
-    <!-- Child DOB -->
+    <!-- Child Age -->
     <TextView
         android:id="@+id/textChildAge"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Age"
-        android:textSize="14sp"
         android:textColor="#555555"
+        android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textChildName"
         app:layout_constraintEnd_toStartOf="@id/btn_edit_child"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toTopOf="@id/text_dashboard_title" />
 
     <!-- Edit Button -->
     <Button
@@ -40,9 +39,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Edit"
+        android:layout_marginStart="4dp"
         app:layout_constraintEnd_toStartOf="@id/btn_delete_child"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toTopOf="@id/text_dashboard_title" />
 
     <!-- Delete Button -->
     <Button
@@ -50,10 +50,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Delete"
+        android:layout_marginStart="4dp"
         app:layout_constraintEnd_toStartOf="@id/btn_share_settings"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginStart="4dp"/>
+        app:layout_constraintBottom_toTopOf="@id/text_dashboard_title" />
 
     <!-- Share Settings Button -->
     <Button
@@ -61,9 +61,188 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Share"
+        android:layout_marginStart="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginStart="4dp"/>
+        app:layout_constraintBottom_toTopOf="@id/text_dashboard_title" />
+
+    <!-- Dashboard Title -->
+    <TextView
+        android:id="@+id/text_dashboard_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Dashboard (last 7 days)"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/textChildAge"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Dashboard Row: Today Zone / This Week / Last Rescue -->
+    <LinearLayout
+        android:id="@+id/layout_dashboard_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/text_dashboard_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Today Zone -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingEnd="4dp">
+
+            <TextView
+                android:id="@+id/text_today_zone_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today zone"
+                android:textSize="12sp"
+                android:textColor="#777777" />
+
+            <TextView
+                android:id="@+id/text_today_zone_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="/Color"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#1B5E20" />
+        </LinearLayout>
+
+        <!-- Weekly Rescue Count -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingHorizontal="4dp">
+
+            <TextView
+                android:id="@+id/text_week_rescue_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rescue this week"
+                android:textSize="12sp"
+                android:textColor="#777777" />
+
+            <TextView
+                android:id="@+id/text_week_rescue_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="/times"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#000000" />
+        </LinearLayout>
+
+        <!-- Last Rescue Time -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="4dp">
+
+            <TextView
+                android:id="@+id/text_last_rescue_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Last rescue"
+                android:textSize="12sp"
+                android:textColor="#777777" />
+
+            <TextView
+                android:id="@+id/text_last_rescue_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="/time"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#000000" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Trend Section -->
+    <LinearLayout
+        android:id="@+id/layout_trend_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/layout_dashboard_row"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/text_trend_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Trend"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333" />
+
+        <RadioGroup
+            android:id="@+id/group_trend_range"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_trend_7d"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7d"
+                android:textSize="12sp"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/rb_trend_30d"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="30d"
+                android:textSize="12sp" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <!-- Trend Chart -->
+    <com.example.a1112.ChartHelper
+        android:id="@+id/chart_trend"
+        android:layout_width="0dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="4dp"
+        android:background="#EEEEEE"
+        app:layout_constraintTop_toBottomOf="@id/layout_trend_header"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Child Home Button -->
+    <Button
+        android:id="@+id/btn_child_home"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Child's Home"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/chart_trend"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Daily Check-in Button -->
+    <Button
+        android:id="@+id/btn_daily_check_in"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Daily Check-in"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/chart_trend"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
