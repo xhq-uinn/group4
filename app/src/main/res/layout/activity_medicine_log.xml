@@ -146,6 +146,14 @@
                 android:text="Alert Settings"
                 android:visibility="gone"
                 android:layout_marginEnd= "8dp" />
+            <Button
+                android:id="@+id/buttonScheduleConfiguration"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Setup Schedule"
+                android:visibility="gone"
+                android:layout_marginEnd= "8dp" />
 
         </LinearLayout>
     </LinearLayout>

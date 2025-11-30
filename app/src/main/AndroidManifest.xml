@@ -74,6 +74,12 @@
         <activity
             android:name=".TechniqueHelperActivity"
             android:exported="false" />
+        <activity
+            android:name=".ProviderMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ScheduleConfigurationActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

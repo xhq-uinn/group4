@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Planned Controller Schedule"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set daily controller doses:"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Monday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/mondayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Tuesday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/tuesdayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Wednesday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/wednesdayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Thursday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/thursdayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Friday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/fridayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Saturday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/saturdayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Sunday:"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/sundayDoses"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="0"
+            android:text="0" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/buttonSaveSchedule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Schedule"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/buttonBack"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Back to Medcine Log" />
+
+</LinearLayout>
