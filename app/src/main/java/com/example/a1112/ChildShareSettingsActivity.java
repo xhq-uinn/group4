@@ -1,7 +1,7 @@
 package com.example.a1112;
 
 import android.os.Bundle;
-import android.util.Log; // Import Log for debugging
+import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Toast;
@@ -76,19 +76,40 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
             // Determine the state of the overall permission switch (defaults to true)
             boolean permissionEnabled = Boolean.TRUE.equals(snapshot.getBoolean("permissionEnabled"));
 
-            // NEW: Load the state of the overall switch
+            // Load and set the state of the overall switch
             cbPermissionEnabled.setChecked(permissionEnabled);
 
-            // Load the status of the other 7 detailed CheckBoxes
-            cbRescueLogs.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("rescueLogs")));
-            cbController.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("controllerAdherence")));
-            cbSymptoms.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("symptoms")));
-            cbTriggers.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("triggers")));
-            cbPeakFlow.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("peakFlow")));
-            cbTriage.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("triageIncidents")));
-            cbSummary.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("summaryCharts")));
+            // Load the status of the other 7 detailed CheckBoxes, setting both the check state and the dynamic text
 
-            // NEW: Based on the loaded overall status, enable or disable the detailed switches
+            boolean rescueLogsChecked = Boolean.TRUE.equals(snapshot.getBoolean("rescueLogs"));
+            setCheckboxText(cbRescueLogs, "Rescue logs", rescueLogsChecked);
+            cbRescueLogs.setChecked(rescueLogsChecked);
+
+            boolean controllerChecked = Boolean.TRUE.equals(snapshot.getBoolean("controllerAdherence"));
+            setCheckboxText(cbController, "Controller adherence", controllerChecked);
+            cbController.setChecked(controllerChecked);
+
+            boolean symptomsChecked = Boolean.TRUE.equals(snapshot.getBoolean("symptoms"));
+            setCheckboxText(cbSymptoms, "Symptoms", symptomsChecked);
+            cbSymptoms.setChecked(symptomsChecked);
+
+            boolean triggersChecked = Boolean.TRUE.equals(snapshot.getBoolean("triggers"));
+            setCheckboxText(cbTriggers, "Triggers", triggersChecked);
+            cbTriggers.setChecked(triggersChecked);
+
+            boolean peakFlowChecked = Boolean.TRUE.equals(snapshot.getBoolean("peakFlow"));
+            setCheckboxText(cbPeakFlow, "Peak-flow", peakFlowChecked);
+            cbPeakFlow.setChecked(peakFlowChecked);
+
+            boolean triageChecked = Boolean.TRUE.equals(snapshot.getBoolean("triageIncidents"));
+            setCheckboxText(cbTriage, "Triage incidents", triageChecked);
+            cbTriage.setChecked(triageChecked);
+
+            boolean summaryChecked = Boolean.TRUE.equals(snapshot.getBoolean("summaryCharts"));
+            setCheckboxText(cbSummary, "Summary charts", summaryChecked);
+            cbSummary.setChecked(summaryChecked);
+
+            // Based on the loaded overall status, enable or disable the detailed switches
             setDetailedPermissionEnabled(permissionEnabled);
         });
     }
@@ -103,29 +124,50 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
         cbSummary.setEnabled(isEnabled);
     }
 
+    private void setCheckboxText(CheckBox cb, String baseText, boolean isChecked) {
+        if (isChecked) {
+            cb.setText(baseText + " (Shared with Provider)");
+        } else {
+            cb.setText(baseText);
+        }
+    }
+
     private void setupListeners() {
         // General listener: used to map CheckBox ID to the corresponding Firestore field name
         CompoundButton.OnCheckedChangeListener generalListener = (buttonView, isChecked) -> {
             String field = null;
+            String baseText = "";
+            CheckBox currentCheckbox = (CheckBox) buttonView;
 
-            // Determine the Firestore field name based on the CheckBox ID
+            // Determine the Firestore field name AND the base text based on the CheckBox ID
             if (buttonView.getId() == R.id.cbRescueLogs) {
                 field = "rescueLogs";
+                baseText = "Rescue logs";
             } else if (buttonView.getId() == R.id.cbController) {
                 field = "controllerAdherence";
+                baseText = "Controller adherence";
             } else if (buttonView.getId() == R.id.cbSymptoms) {
                 field = "symptoms";
+                baseText = "Symptoms";
             } else if (buttonView.getId() == R.id.cbTriggers) {
                 field = "triggers";
+                baseText = "Triggers";
             } else if (buttonView.getId() == R.id.cbPeakFlow) {
                 field = "peakFlow";
+                baseText = "Peak-flow";
             } else if (buttonView.getId() == R.id.cbTriage) {
                 field = "triageIncidents";
+                baseText = "Triage incidents";
             } else if (buttonView.getId() == R.id.cbSummary) {
                 field = "summaryCharts";
+                baseText = "Summary charts";
             }
 
             if (field != null) {
+                // *** NEW: Update the CheckBox text dynamically ***
+                setCheckboxText(currentCheckbox, baseText, isChecked);
+
+                // Update Firestore
                 updateSharingField(field, isChecked);
             }
         };
@@ -137,9 +179,13 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
 
             // UI Linkage: Enable or disable the other 7 detailed CheckBoxes
             setDetailedPermissionEnabled(isEnabled);
+
+            // Note: When disabling overall permission, the dynamic text on sub-items
+            // will naturally be set correctly by loadSharingSettings() next time,
+            // and the user can't interact with them while disabled.
         });
 
-        // Attach the general Firestore update listener to the other 7 detailed CheckBoxes
+        // Attach the general Firestore update and text update listener to the other 7 detailed CheckBoxes
         cbRescueLogs.setOnCheckedChangeListener(generalListener);
         cbController.setOnCheckedChangeListener(generalListener);
         cbSymptoms.setOnCheckedChangeListener(generalListener);
