@@ -14,6 +14,11 @@ public class LoginActivityPresenter {
         this.model = new LoginActivityModel();
     }
 
+    public LoginActivityPresenter(LoginActivityView view, LoginActivityModel model) {
+        this.view = view;
+        this.model = model;
+    }
+
     public void handleLogin(
             String email, //parent/provider email
             String adultPassword, //parent/provider password
