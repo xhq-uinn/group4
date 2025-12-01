@@ -82,14 +82,31 @@ public class ScheduleConfigurationActivity extends AppCompatActivity{
 
     //store schedule on firestore database if no inputs cause error
     private void saveSchedule() {
+
+        //get input field text and make sure they're all filled in
+        String mondayString = mondayDoses.getText().toString().trim();
+        String tuesdayString = tuesdayDoses.getText().toString().trim();
+        String wednesdayString = wednesdayDoses.getText().toString().trim();
+        String thursdayString = thursdayDoses.getText().toString().trim();
+        String fridayString = fridayDoses.getText().toString().trim();
+        String saturdayString = saturdayDoses.getText().toString().trim();
+        String sundayString = sundayDoses.getText().toString().trim();
+
+        if (mondayString.isEmpty() || tuesdayString.isEmpty() || wednesdayString.isEmpty() ||
+                thursdayString.isEmpty() || fridayString.isEmpty() || saturdayString.isEmpty() ||
+                sundayString.isEmpty()) {
+            Toast.makeText(this, "Please fill in all days", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
-            int monday = Integer.parseInt(mondayDoses.getText().toString());
-            int tuesday = Integer.parseInt(tuesdayDoses.getText().toString());
-            int wednesday = Integer.parseInt(wednesdayDoses.getText().toString());
-            int thursday = Integer.parseInt(thursdayDoses.getText().toString());
-            int friday = Integer.parseInt(fridayDoses.getText().toString());
-            int saturday = Integer.parseInt(saturdayDoses.getText().toString());
-            int sunday = Integer.parseInt(sundayDoses.getText().toString());
+            int monday = Integer.parseInt(mondayString);
+            int tuesday = Integer.parseInt(tuesdayString);
+            int wednesday = Integer.parseInt(wednesdayString);
+            int thursday = Integer.parseInt(thursdayString);
+            int friday = Integer.parseInt(fridayString);
+            int saturday = Integer.parseInt(saturdayString);
+            int sunday = Integer.parseInt(sundayString);
 
             Map<String, Object> scheduleData = new HashMap<>();
             scheduleData.put("childId", currentChildId);

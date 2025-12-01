@@ -58,9 +58,8 @@ public class MedicineLogAdapter extends RecyclerView.Adapter<MedicineLogAdapter.
             //setup display of medicine log items (name, timestamp, dose count, logged by and color coded post feeling(optional))
 
             logMedicineNameText.setText(log.getMedicineName());
-
-            SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
-            logTimeText.setText(timeFormat.format(log.getTimestamp()));
+            SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, MMM d, yyyy h:mm a", Locale.getDefault());
+            logTimeText.setText(dateFormat.format(log.getTimestamp()));
 
             //initialize unit type to doses in case we cant get it from Medicinelog object
             String unitType = "doses";

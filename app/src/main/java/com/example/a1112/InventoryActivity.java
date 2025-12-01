@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,10 +47,14 @@ public class InventoryActivity extends AppCompatActivity {
     private String currentChildName;
 
     private FirebaseFirestore db;
+    private FirebaseAuth mAuth;
     private ListenerRegistration medicineListener;
 
     private Date selectedPurchaseDate;
     private Date selectedExpiryDate;
+
+
+
 
     // date formatter for display
     private SimpleDateFormat dateFormatter = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
@@ -64,6 +71,7 @@ public class InventoryActivity extends AppCompatActivity {
 
         // Initialize Firebase
         db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
 
         initializeViews();
         setupRecyclerView();
@@ -168,7 +176,33 @@ public class InventoryActivity extends AppCompatActivity {
                     return;
                 }
 
-                int totalAmount = Integer.parseInt(totalAmountString);
+                int totalAmount;
+                try {
+                    totalAmount = Integer.parseInt(totalAmountString);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(this, "Total amount must be a number", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (totalAmount < 1) {
+                    Toast.makeText(this, "Total amount must be at least " + 1, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (selectedPurchaseDate.after(new Date()) && !isSameDay(selectedPurchaseDate, new Date())) {
+                    Toast.makeText(this, "Purchase date cannot be in the future", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (!selectedExpiryDate.after(new Date())) {
+                    Toast.makeText(this, "Expiry date must be in the future", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (selectedPurchaseDate.after(selectedExpiryDate)) {
+                    Toast.makeText(this, "Purchase date must be before expiry date", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
                 Medicine newMedicine = new Medicine(
                         currentChildId,
@@ -223,6 +257,8 @@ public class InventoryActivity extends AppCompatActivity {
                     updateNoMedicinesDisplay();
 
                     adapter.notifyDataSetChanged();
+
+                    checkMedicinesExpiry();
 
                 });
     }
@@ -350,11 +386,19 @@ public class InventoryActivity extends AppCompatActivity {
         layout.addView(unitSelector);
 
         //input fields to edit total or current amount of medicine
+        TextView totalAmountTitle = new TextView(this);
+        totalAmountTitle.setText("Total Amount");
+        layout.addView(totalAmountTitle);
+
         final EditText totalAmountEdit = new EditText(this);
         totalAmountEdit.setHint("New total amount");
         totalAmountEdit.setText(String.valueOf(medicine.getTotalAmount()));
         totalAmountEdit.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         layout.addView(totalAmountEdit);
+
+        TextView currentAmountTitle = new TextView(this);
+        currentAmountTitle.setText("Current Amount");
+        layout.addView(currentAmountTitle);
 
         final EditText currentAmountEdit = new EditText(this);
         currentAmountEdit.setHint("New current amount");
@@ -374,6 +418,25 @@ public class InventoryActivity extends AppCompatActivity {
 
             if (name.isEmpty() || totalAmountString.isEmpty() || currentAmountString.isEmpty()) {
                 Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int totalAmount, currentAmount;
+            try {
+                totalAmount = Integer.parseInt(totalAmountString);
+                currentAmount = Integer.parseInt(currentAmountString);
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Amounts must be numbers", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (totalAmount < 1) {
+                Toast.makeText(this, "Total amount must be at least " + 1, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (currentAmount > totalAmount) {
+                Toast.makeText(this, "Current amount cannot be greater than total amount", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -424,15 +487,30 @@ public class InventoryActivity extends AppCompatActivity {
 
         //changes current amount, timestamp of change and tracks that its parent marked when update button is hit
         builder.setPositiveButton("Update", (dialog, which) -> {
-            String newAmountString = currentAmountEdit.getText().toString();
-            if (!newAmountString.isEmpty()) {
-                int newAmount = Integer.parseInt(newAmountString);
-                medicine.setCurrentAmount(newAmount);
-                medicine.setLastUpdatedBy("parent");
-                medicine.setLastUpdatedAt(new Date());
-
-                updateAmount(medicine);
+            String newAmountString = currentAmountEdit.getText().toString().trim();
+            if (newAmountString.isEmpty()) {
+                Toast.makeText(this, "Please enter a new amount", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            int newAmount;
+            try {
+                newAmount = Integer.parseInt(newAmountString);
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Amount must be a number", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (newAmount > medicine.getTotalAmount()) {
+                Toast.makeText(this, "Current amount cannot be greater than total amount ", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            medicine.setCurrentAmount(newAmount);
+            medicine.setLastUpdatedBy("parent");
+            medicine.setLastUpdatedAt(new Date());
+
+            updateAmount(medicine);
         });
 
         builder.setNegativeButton("Cancel", null);
@@ -515,6 +593,106 @@ public class InventoryActivity extends AppCompatActivity {
             noMedicinesText.setVisibility(View.GONE);
             medicinesRecyclerView.setVisibility(View.VISIBLE);
         }
+    }
+
+    //check if medicines are expired or within 7 days of expiry and send alerts accordingly
+    private void checkMedicinesExpiry() {
+        if (medicines == null || medicines.isEmpty()) {
+            return;
+        }
+
+        Date now = new Date();
+        Calendar expiryWarningCal = Calendar.getInstance();
+        expiryWarningCal.setTime(now);
+        expiryWarningCal.add(Calendar.DAY_OF_YEAR, 7);
+        Date warningThreshold = expiryWarningCal.getTime();
+
+
+        List<String> expiredMedicineNames = new ArrayList<>();
+        List<String> expiringSoonMedicineNames = new ArrayList<>();
+
+        for (Medicine medicine : medicines) {
+            Date expiryDate = medicine.getExpiryDate();
+
+            if (expiryDate == null) {
+                continue;
+            }
+
+            if (expiryDate.before(now)) {
+                expiredMedicineNames.add(medicine.getName());
+                Toast.makeText(this,medicine.getName() + " has EXPIRED!", Toast.LENGTH_LONG).show();
+            }
+
+            else if (expiryDate.before(warningThreshold) || isSameDay(expiryDate, warningThreshold)) {
+                expiringSoonMedicineNames.add(medicine.getName());
+                Toast.makeText(this, medicine.getName() + " expires SOON!", Toast.LENGTH_LONG).show();
+
+            }
+        }
+
+        //send alerts if lists of expired/soon expired medicines are nonempty with correct alert type
+        if (!expiredMedicineNames.isEmpty()) {
+            ExpiryAlert("expired", expiredMedicineNames);
+        }
+        if (!expiringSoonMedicineNames.isEmpty()) {
+            ExpiryAlert("expiring_soon", expiringSoonMedicineNames);
+        }
+    }
+
+
+    private void ExpiryAlert(String alertType, List<String> medicineNames) {
+        if (medicineNames == null || medicineNames.isEmpty()) {
+            return;
+        }
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+        String parentId = currentUser.getUid();
+
+        StringBuilder medicineList = new StringBuilder();
+        for (int i = 0; i < medicineNames.size(); i++) {
+            medicineList.append(medicineNames.get(i));
+            if (i < medicineNames.size() - 1) {
+                medicineList.append(", ");
+            }
+        }
+
+        Map<String, Object> alertInfo = new HashMap<>();
+        alertInfo.put("parentId", parentId);
+        alertInfo.put("childId", currentChildId);
+
+        if ("expired".equals(alertType)) {
+            alertInfo.put("type", "medicine_expired");
+            alertInfo.put("details", currentChildName + "'s medicines have EXPIRED: " + medicineList.toString());
+        }
+        else
+        {
+            alertInfo.put("type", "medicine_expiring_soon");
+            alertInfo.put("details", currentChildName + "'s medicines expire in 7 days or less: " + medicineList.toString());
+        }
+
+        alertInfo.put("timestamp", new Date());
+
+        db.collection("alerts").add(alertInfo)
+                .addOnFailureListener(e -> {
+                    Log.e("InventoryActivity", "Failed to send expiry alert", e);
+                });
+    }
+
+    //helper which checks if 2 dates are the same day
+    private boolean isSameDay(Date date1, Date date2) {
+        Calendar day1 = Calendar.getInstance();
+        Calendar day2 = Calendar.getInstance();
+        day1.setTime(date1);
+        day2.setTime(date2);
+
+        boolean sameDay = day1.get(Calendar.DAY_OF_MONTH) == day2.get(Calendar.DAY_OF_MONTH);
+        boolean sameMonth = day1.get(Calendar.MONTH) == day2.get(Calendar.MONTH);
+        boolean sameYear = day1.get(Calendar.YEAR) == day2.get(Calendar.YEAR);
+
+        return  sameDay && sameMonth && sameYear;
+
     }
 
 

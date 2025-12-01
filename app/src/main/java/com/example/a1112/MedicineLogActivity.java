@@ -308,10 +308,16 @@ public class MedicineLogActivity extends AppCompatActivity {
 
         //make sure doseStr is a number and convert it to int
         int doseCount;
+
         try {
             doseCount = Integer.parseInt(doseStr);
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Invalid dose count", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (doseCount <= 0) {
+            Toast.makeText(this, "Please enter dose count greater than 0", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -360,10 +366,6 @@ public class MedicineLogActivity extends AppCompatActivity {
 
     // rating of last dose (pre/post check)
     private void rateLastDose() {
-        if (logs.isEmpty()) {
-            Toast.makeText(this, "No doses to rate yet", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // get most recent log
         db.collection("medicineLogs")
@@ -557,10 +559,26 @@ public class MedicineLogActivity extends AppCompatActivity {
 
         builder.setView(layout);
         builder.setPositiveButton("Save", (dialog, which) -> {
+            String thresholdText = thresholdInput.getText().toString().trim();
+            String hoursText = hoursInput.getText().toString().trim();
+
+            // Check for empty inputs
+            if (thresholdText.isEmpty() || hoursText.isEmpty()) {
+                Toast.makeText(this, "Please fill in both fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             try {
-                // store shared preferences if no error
-                maxRapidRescues = Integer.parseInt(thresholdInput.getText().toString());
-                rapidRescuesTimeframe = Integer.parseInt(hoursInput.getText().toString());
+                int thresholdInputValue = Integer.parseInt(thresholdInput.getText().toString().trim());
+                int hoursInputValue = Integer.parseInt(hoursInput.getText().toString().trim());
+
+                if (thresholdInputValue <= 0 || hoursInputValue <= 0 ) {
+                    Toast.makeText(this, "Number of rescues and hours must be greater than 0", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                //store shared preferences if no error
+                maxRapidRescues = thresholdInputValue;
+                rapidRescuesTimeframe = hoursInputValue;
 
                 SharedPreferences prefs = getSharedPreferences("medicine_settings", MODE_PRIVATE);
                 prefs.edit()

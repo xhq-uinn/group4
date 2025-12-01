@@ -109,7 +109,7 @@ public class Medicine {
     //check if a medicine is running low or child flagged it low
     @Exclude
     public boolean isLow() {
-        return getPercentageLeft() <= 20 || isFlaggedLowByChild();
+        return getPercentageLeft() <= 20;
     }
 
     //check for expiry
