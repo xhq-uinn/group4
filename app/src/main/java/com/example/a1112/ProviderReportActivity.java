@@ -43,12 +43,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 
 public class ProviderReportActivity extends AppCompatActivity {
 
@@ -473,7 +473,6 @@ public class ProviderReportActivity extends AppCompatActivity {
                     // fetch the last 5 triage incidents from incidentLogs
                     db.collection("children").document(childId).collection("incidentLogs")
                             .orderBy("timestamp", Query.Direction.DESCENDING)
-                            .limit(5)
                             .get()
                             .addOnSuccessListener(result -> {
                                 if (result.isEmpty()) {
@@ -674,14 +673,5 @@ public class ProviderReportActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(intent, "Share PDF"));
     }
 
-    // helper class to store provider information
-    private static class ProviderInfo {
-        String providerId;
-        String email;
 
-        ProviderInfo(String providerId, String email) {
-            this.providerId = providerId;
-            this.email = email;
-        }
-    }
 }
