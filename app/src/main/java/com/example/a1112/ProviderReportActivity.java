@@ -43,6 +43,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -53,17 +54,22 @@ public class ProviderReportActivity extends AppCompatActivity {
 
     // UI components
     private TextView textTitle, rescueFrequencyText, controllerAdherenceText, noZoneDataText, noSymptomDataText, periodDisplayText;
+    private TextView  noTriageDataText;
     private BarChart symptomBurdenChart;
     private LineChart zoneDistributionChart;
     private Button buttonExportPdf, buttonHome;
-    private Spinner timePeriodSpinner;
-    private LinearLayout reportContent;
+    private Spinner timePeriodSpinner, providerSpinner;
+    private LinearLayout reportContent, triageIncidentsContainer;
 
     private FirebaseFirestore db;
     private String childId;
     private String childName;
 
     private int reportPeriodMonths = -3;
+
+    // store list of shared providers with their provider IDs and emails
+    private List<ProviderInfo> sharedProviders = new ArrayList<>();
+    private String selectedProviderId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +83,7 @@ public class ProviderReportActivity extends AppCompatActivity {
 
         initializeViews();
         setupTimePeriodSpinner();
+        loadSharedProviders();
         setupClickListeners();
         displayReportInfo();
     }
@@ -88,12 +95,15 @@ public class ProviderReportActivity extends AppCompatActivity {
         noZoneDataText = findViewById(R.id.noZoneDataText);
         noSymptomDataText = findViewById(R.id.noSymptomDataText);
         periodDisplayText = findViewById(R.id.periodDisplayText);
+        noTriageDataText = findViewById(R.id.noTriageDataText);
         timePeriodSpinner = findViewById(R.id.timePeriodSpinner);
+        providerSpinner = findViewById(R.id.providerSpinner);
         symptomBurdenChart = findViewById(R.id.symptomBurdenChart);
         zoneDistributionChart = findViewById(R.id.zoneDistributionChart);
         buttonExportPdf = findViewById(R.id.buttonExportPdf);
         buttonHome = findViewById(R.id.buttonHome);
         reportContent = findViewById(R.id.report_content);
+        triageIncidentsContainer = findViewById(R.id.triageIncidentsContainer);
 
         textTitle.setText(String.format("%s's Provider Report", childName));
     }
@@ -125,13 +135,95 @@ public class ProviderReportActivity extends AppCompatActivity {
         });
     }
 
+    // load all shared providers from the sharedProviders list field and get their emails
+    private void loadSharedProviders() {
+        db.collection("children").document(childId)
+                .get()
+                .addOnSuccessListener(childDoc -> {
+                    sharedProviders.clear();
+
+                    // get the list of provider IDs from the sharedProviders field
+                    List<String> providerIds = (List<String>) childDoc.get("sharedProviders");
+
+                    if (providerIds == null || providerIds.isEmpty()) {
+                        setupProviderSpinner(new ArrayList<>());
+                        return;
+                    }
+
+                    // for each provider ID fetch their email from the users collection
+                    final int[] loadedCount = {0};
+                    for (String providerId : providerIds) {
+                        db.collection("users").document(providerId)
+                                .get()
+                                .addOnSuccessListener(userDoc -> {
+                                    String email = userDoc.getString("email");
+                                    if (email != null) {
+                                        sharedProviders.add(new ProviderInfo(providerId, email));
+                                    }
+
+                                    loadedCount[0]++;
+                                    // once all providers are loaded setup the spinner
+                                    if (loadedCount[0] == providerIds.size()) {
+                                        setupProviderSpinner(sharedProviders);
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    loadedCount[0]++;
+                                    if (loadedCount[0] == providerIds.size()) {
+                                        setupProviderSpinner(sharedProviders);
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error loading providers", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    // setup the provider spinner with list of provider emails
+    private void setupProviderSpinner(List<ProviderInfo> providers) {
+        List<String> displayNames = new ArrayList<>();
+
+        if (providers.isEmpty()) {
+            displayNames.add("No providers shared");
+        } else {
+            for (ProviderInfo provider : providers) {
+                displayNames.add(provider.email);
+            }
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, displayNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        providerSpinner.setAdapter(adapter);
+
+        providerSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // when provider is selected update the selected ID and reload triage incidents
+                if (position < sharedProviders.size()) {
+                    selectedProviderId = sharedProviders.get(position).providerId;
+                    displayTriageIncidents();
+                } else {
+                    selectedProviderId = "";
+                    hideTriageIncidents();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
 
     private void setupClickListeners() {
         buttonExportPdf.setOnClickListener(v -> createPdf());
         buttonHome.setOnClickListener(v -> {
-                    Intent intent = new Intent(ProviderReportActivity.this, ParentHomeActivity.class);
-                    startActivity(intent);
-                });
+            Intent intent = new Intent(ProviderReportActivity.this, ParentHomeActivity.class);
+            startActivity(intent);
+        });
     }
 
 
@@ -141,6 +233,7 @@ public class ProviderReportActivity extends AppCompatActivity {
         displayControllerAdherence();
         getSymptomBurdenInfo();
         getZoneDistributionInfo();
+        displayTriageIncidents();
     }
 
     //get all rescue logs within the given last months to now and calculate the average rescue per day
@@ -348,74 +441,174 @@ public class ProviderReportActivity extends AppCompatActivity {
                 });
     }
 
+    // check if selected provider has triage sharing enabled and display last 5 triage incidents
+    private void displayTriageIncidents() {
+        // if no provider selected hide the section
+        if (selectedProviderId == null || selectedProviderId.isEmpty()) {
+            hideTriageIncidents();
+            return;
+        }
+
+        // find the sharing settings document for this provider to check if triage is enabled
+        db.collection("children").document(childId).collection("sharingSettings")
+                .whereEqualTo("providerId", selectedProviderId)
+                .get()
+                .addOnSuccessListener(settingsDocs -> {
+                    if (settingsDocs.isEmpty()) {
+                        hideTriageIncidents();
+                        return;
+                    }
+
+                    DocumentSnapshot settingsDoc = settingsDocs.getDocuments().get(0);
+                    Boolean permissionEnabled = settingsDoc.getBoolean("permissionEnabled");
+                    Boolean triageEnabled = settingsDoc.getBoolean("triageIncidents");
+
+                    // only show if both permission and triage incidents are enabled
+                    if (permissionEnabled == null || !permissionEnabled ||
+                            triageEnabled == null || !triageEnabled) {
+                        hideTriageIncidents();
+                        return;
+                    }
+
+                    // fetch the last 5 triage incidents from incidentLogs
+                    db.collection("children").document(childId).collection("incidentLogs")
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                            .limit(5)
+                            .get()
+                            .addOnSuccessListener(result -> {
+                                if (result.isEmpty()) {
+                                    showNoTriageData();
+                                    return;
+                                }
+
+                                // clear previous incident views and add new ones
+                                triageIncidentsContainer.removeAllViews();
+                                SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
+
+                                for (QueryDocumentSnapshot doc : result) {
+                                    // create a text view for each incident with timestamp guidance and flags
+                                    TextView incidentView = new TextView(this);
+                                    Date timestamp = doc.getDate("timestamp");
+                                    String guidance = doc.getString("guidance");
+                                    List<String> flags = (List<String>) doc.get("flags");
+
+                                    StringBuilder incidentText = new StringBuilder();
+                                    incidentText.append(timestamp != null ? dateFormat.format(timestamp) : "Unknown date");
+
+                                    if (guidance != null) {
+                                        incidentText.append(" | Guidance: ").append(guidance);
+                                    }
+
+                                    if (flags != null && !flags.isEmpty()) {
+                                        incidentText.append(" | Flags: ").append(String.join(", ", flags));
+                                    }
+
+                                    incidentText.append("\n");
+
+                                    incidentView.setText(incidentText.toString());
+                                    incidentView.setTextSize(14);
+                                    incidentView.setPadding(0, 16, 0, 16);
+
+                                    triageIncidentsContainer.addView(incidentView);
+                                }
+
+                                // show the triage section
+                                triageIncidentsContainer.setVisibility(View.VISIBLE);
+                                noTriageDataText.setVisibility(View.GONE);
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error loading triage incidents", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    hideTriageIncidents();
+                });
+    }
+
+    // hide all triage incident views when sharing is disabled
+    private void hideTriageIncidents() {
+        triageIncidentsContainer.setVisibility(View.GONE);
+        noTriageDataText.setVisibility(View.VISIBLE);
+    }
+
+    // show message when no triage incidents exist but sharing is enabled
+    private void showNoTriageData() {
+        triageIncidentsContainer.setVisibility(View.GONE);
+        noTriageDataText.setText("No triage incidents recorded");
+        noTriageDataText.setVisibility(View.VISIBLE);
+    }
+
     //given count of days with symptoms (bar1) and without symptoms (bar2) display a bar chart
     private void setupSymptomBurdenChart(int daysWithSymptoms, int daysWithoutSymptoms) {
-        //hide chart if theres no days with or without symptoms (no dailyCheckins submitted)
+        // if no symptom data hide chart and show no data message
         if (daysWithSymptoms + daysWithoutSymptoms == 0) {
             symptomBurdenChart.setVisibility(View.GONE);
             noSymptomDataText.setVisibility(View.VISIBLE);
             return;
         }
 
+        // create bar entries for days with and without symptoms
         List<BarEntry> entries = new ArrayList<>();
         entries.add(new BarEntry(0f, daysWithSymptoms));
         entries.add(new BarEntry(1f, daysWithoutSymptoms));
 
+        // create dataset and set bar colors orange for with symptoms and green for without
         BarDataSet set = new BarDataSet(entries, "Symptom Burden");
         set.setColors(new int[]{getResources().getColor(R.color.Orange), getResources().getColor(R.color.Green)});
 
+        // create bar data and set bar width
         BarData data = new BarData(set);
         data.setBarWidth(0.5f);
 
-        //setup chart appearance and basic settigns
+        // configure chart appearance and axis settings
         symptomBurdenChart.setData(data);
         symptomBurdenChart.getDescription().setEnabled(false);
         symptomBurdenChart.getLegend().setEnabled(false);
         symptomBurdenChart.getAxisRight().setEnabled(false);
         symptomBurdenChart.getAxisLeft().setAxisMinimum(0f);
 
-        //label the bars on the x axis
+        // set x axis labels for the two bars
         XAxis xAxis = symptomBurdenChart.getXAxis();
         xAxis.setValueFormatter(new IndexAxisValueFormatter(new String[]{"Days Reported With Symptoms", "Days Reported Without Symptoms"}));
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f);
         xAxis.setGranularityEnabled(true);
 
-        //reload the chart display
+        // refresh chart to display
         symptomBurdenChart.invalidate();
     }
 
-
     //given list of entries and dates for zone values display a line chart
     private void setupZoneDistributionChart(List<Entry> entries, List<String> dateLabels) {
-        //hide chart if theres no entries
+        // if no zone data hide chart and show no data message
         if (entries.isEmpty()) {
             zoneDistributionChart.setVisibility(View.GONE);
             noZoneDataText.setVisibility(View.VISIBLE);
             return;
         }
 
-        //setup line data and chart's appearance
+        // create line dataset and set colors and line style
         LineDataSet dataSet = new LineDataSet(entries, "Zone Distribution");
         dataSet.setCircleColor(getResources().getColor(R.color.Purple));
         dataSet.setColor(getResources().getColor(R.color.LightPurple));
         dataSet.setLineWidth(2f);
         dataSet.setCircleRadius(4f);
         dataSet.setDrawCircleHole(false);
-        LineData lineData = new LineData(dataSet);
 
+        // set line data to chart and configure basic appearance
+        LineData lineData = new LineData(dataSet);
         zoneDistributionChart.setData(lineData);
         zoneDistributionChart.getDescription().setEnabled(false);
         zoneDistributionChart.getAxisRight().setEnabled(false);
         zoneDistributionChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
 
-        //add labels to x axis with max of 6 so it doesnt get crazy
+        // set x axis to show dates with a max of 6 labels
         if (!dateLabels.isEmpty()) {
             zoneDistributionChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(dateLabels));
             zoneDistributionChart.getXAxis().setLabelCount(Math.min(dateLabels.size(), 6), true);
         }
 
-        //setup y axis and have it display labels for zone
+        // configure y axis to show zone names instead of numbers
         zoneDistributionChart.getAxisLeft().setAxisMinimum(0f);
         zoneDistributionChart.getAxisLeft().setAxisMaximum(4f);
         zoneDistributionChart.getAxisLeft().setGranularity(1f);
@@ -429,7 +622,7 @@ public class ProviderReportActivity extends AppCompatActivity {
             }
         });
 
-        //reload the chart display
+        // refresh chart to display
         zoneDistributionChart.invalidate();
     }
 
@@ -479,5 +672,16 @@ public class ProviderReportActivity extends AppCompatActivity {
         intent.putExtra(Intent.EXTRA_STREAM, fileUri);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(intent, "Share PDF"));
+    }
+
+    // helper class to store provider information
+    private static class ProviderInfo {
+        String providerId;
+        String email;
+
+        ProviderInfo(String providerId, String email) {
+            this.providerId = providerId;
+            this.email = email;
+        }
     }
 }
