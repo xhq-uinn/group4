@@ -51,6 +51,21 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Provider:"
+            android:textSize="16sp"
+            android:layout_marginTop="16dp"/>
+
+        <Spinner
+            android:id="@+id/providerSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"/>
+
+
+
         <Button
             android:id="@+id/buttonExportPdf"
             android:layout_width="wrap_content"
@@ -127,6 +142,31 @@
             android:text="No zone data available"
             android:visibility="gone"
             android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Notable Triage Incidents (Last 5)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp" />
+
+        <LinearLayout
+            android:id="@+id/triageIncidentsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/noTriageDataText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sharing disabled or no incidents to display"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"/>
 
         <Button
             android:id="@+id/buttonHome"
