@@ -9,10 +9,6 @@ public class LoginActivityPresenter {
     private final LoginActivityModel model;
     private final LoginActivityView view;
 
-    public LoginActivityPresenter(LoginActivityView view) {
-        this.view = view;
-        this.model = new LoginActivityModel();
-    }
 
     public LoginActivityPresenter(LoginActivityView view, LoginActivityModel model) {
         this.view = view;
