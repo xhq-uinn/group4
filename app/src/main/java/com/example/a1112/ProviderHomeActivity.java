@@ -28,7 +28,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
     // Instance variables for UI components
 
     EditText inviteCodeEditText;
-    Button submitButton;
+    Button submitButton, buttonViewDetails;
     RecyclerView patientsRecyclerView;
     Button buttonSignOut;
 
@@ -38,8 +38,8 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
     // Stores data containing list of providers' patients
 
-    List<String> patientList;
-    String selectedPatient = null;
+    List<Child> patientList;
+    Child selectedChild = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +60,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
     void initializeViews() {
         inviteCodeEditText = findViewById(R.id.inviteCodeEditText);
         submitButton = findViewById(R.id.submitButton);
+        buttonViewDetails = findViewById(R.id.buttonViewDetails);
         patientsRecyclerView = findViewById(R.id.patientsRecyclerView);
         buttonSignOut = findViewById(R.id.buttonSignOut);
 
@@ -74,9 +75,13 @@ public class ProviderHomeActivity extends AppCompatActivity {
     void setupPatientList() {
         PatientAdapter adapter = new PatientAdapter(
                 patientList,
-                name -> {
-                    selectedPatient = name;
-                    Toast.makeText(this, "Selected: " + name, Toast.LENGTH_SHORT).show();
+                child -> {
+                    selectedChild = child;
+
+                    Toast.makeText(this, "Selected: " + child.getName(), Toast.LENGTH_SHORT).show();
+
+                    buttonViewDetails.setEnabled(true);
+                    buttonViewDetails.setText("View Details for " + child.getName());
                 });
         patientsRecyclerView.setAdapter(adapter);
     }
@@ -138,6 +143,16 @@ public class ProviderHomeActivity extends AppCompatActivity {
                     });
         });
 
+        buttonViewDetails.setOnClickListener(v -> {
+            if (selectedChild != null) {
+                Intent intent = new Intent(ProviderHomeActivity.this, ProviderMainActivity.class);
+                intent.putExtra("PROVIDER_ID", getCurrentProviderId());
+                intent.putExtra("CHILD_ID", selectedChild.getId());
+                intent.putExtra("CHILD_NAME", selectedChild.getName());
+                startActivity(intent);
+            }
+        });
+
         buttonSignOut.setOnClickListener(v -> {
             mAuth.signOut();
             Intent intent = new Intent(ProviderHomeActivity.this, LoginActivity.class);
@@ -160,10 +175,15 @@ public class ProviderHomeActivity extends AppCompatActivity {
                     patientList.clear();
 
                     for (QueryDocumentSnapshot doc : value) {
-                        String name = doc.getString("name");
-                        if (name != null) {
-                            patientList.add(name);
-                        }
+                        String childId = doc.getId();
+                        String childName = doc.getString("name");
+
+                        Child child = new Child();
+                        child.setId(childId);
+                        child.setName(childName);
+
+                        patientList.add(child);
+
                     }
 
                     if (patientsRecyclerView.getAdapter() != null) {

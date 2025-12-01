@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Child Name's Details"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="RECENT RESCUE LOGS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/rescueLogsNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rescueLogsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/noRescueLogsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No rescue logs yet"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CONTROLLER ADHERENCE"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/controllerAdherenceNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/controllerAdherenceSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Last 7 days: X/7 completed"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SYMPTOMS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/symptomsNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/symptomsSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Number of days with each symptom over last 7 days"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/noSymptomsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No symptoms logged"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TRIGGERS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/triggersNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/triggersSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Number of days with each trigger over last 7 days"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LATEST PEAK FLOW ENTRY (PEF)"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/peakFlowNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/peakFlowSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Latest PEF reading"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TRIAGE INCIDENTS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/triageNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/triageDisplay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Last 5 Triage incidents"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/noTriageText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No triage incidents"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="RESCUE TREND"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/rescueTrendNotShared"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Parent has chosen not to share this with you."
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/rescueTrendDisplay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dashboard charts available"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rescue Trend - Last 7 Days"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <com.example.a1112.ChartHelper
+            android:id="@+id/providerChartTrend"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_marginBottom="8dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/buttonBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back to List of Patients"
+            android:textSize="18sp"
+            android:layout_marginTop="12dp" />
+
+    </LinearLayout>
+</ScrollView>

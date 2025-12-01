@@ -74,6 +74,26 @@
         <activity
             android:name=".TechniqueHelperActivity"
             android:exported="false" />
+        <activity
+            android:name=".ProviderMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ScheduleConfigurationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ProviderReportActivity"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.a1112.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>
