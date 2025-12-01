@@ -37,7 +37,7 @@ public class ParentHomeActivity extends AppCompatActivity {
     // UI
     private Button buttonAddChild;
     //    private Button buttonLinkChild;
-    private Button buttonInviteProvider;
+    //    private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
     private Button buttonInventory;
