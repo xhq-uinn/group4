@@ -84,6 +84,13 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
         });
 
         holder.childHomeBtn.setOnClickListener(v -> listener.onOpenChildHome(child));
+
+        holder.historyBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), HistoryActivity.class);
+            intent.putExtra("childId", child.getId());
+            v.getContext().startActivity(intent);
+        });
+
     }
 
     @Override
@@ -94,7 +101,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     static class ChildViewHolder extends RecyclerView.ViewHolder {
         TextView nameText, ageText;
         Button editBtn, deleteBtn, shareBtn, dailyCheckInBtn;
-        Button childHomeBtn;
+        Button childHomeBtn, historyBtn;
         TextView todayZoneText;
         TextView weekRescueText;
         TextView lastRescueText;
@@ -115,6 +122,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             shareBtn = itemView.findViewById(R.id.btn_share_settings);
             dailyCheckInBtn = itemView.findViewById(R.id.btn_daily_check_in);
             childHomeBtn = itemView.findViewById(R.id.btn_child_home);
+            historyBtn = itemView.findViewById(R.id.btn_history);
 
             todayZoneText = itemView.findViewById(R.id.text_today_zone_value);
             weekRescueText = itemView.findViewById(R.id.text_week_rescue_value);

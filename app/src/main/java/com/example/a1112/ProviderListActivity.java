@@ -87,9 +87,21 @@ public class ProviderListActivity extends AppCompatActivity
     }
 
     @Override
-    public void onDeleteInvite(String inviteCode, int position) {
-        // Call the local method to execute the Firestore batch deletion
-        deleteInviteCode(inviteCode, position);
+    public void onDeleteInvite(String inviteCode, String providerId, int position) {
+        // Check if the invite has been accepted (providerId exists)
+        if (providerId != null && !providerId.isEmpty()) {
+            // SCENARIO 1: Association already established (Provider has accepted)
+            // Show a message that revoke is invalid/blocked
+            Toast.makeText(ProviderListActivity.this, "Association already established. Revoke action is blocked.", Toast.LENGTH_LONG).show();
+
+            // Optional: If you still want to allow 'unshare' or 'deactivate' here,
+            // you would call a different method, but direct deletion (revoke) is not allowed.
+
+        } else {
+            // SCENARIO 2: Invite has NOT been accepted
+            // Proceed with the actual deletion from Firestore
+            deleteInviteCode(inviteCode, position);
+        }
     }
     private void deleteInviteCode(String code, int position) {
         WriteBatch batch = db.batch();
@@ -118,6 +130,7 @@ public class ProviderListActivity extends AppCompatActivity
     }
 
     // Queries Firestore for all existing sharing settings (invites) for the current child.
+    // Queries Firestore for all existing sharing settings (invites) for the current child.
     private void loadProviderInvites() {
         providerList.clear();
 
@@ -131,11 +144,12 @@ public class ProviderListActivity extends AppCompatActivity
                         String inviteCode = doc.getId(); // Document ID is the invite code
                         String providerId = doc.getString("providerId");
 
-                        // Read all sharing fields, including the overall permissionEnabled status
+                        // Read all sharing fields
                         Map<String, Boolean> sharingFields = new HashMap<>();
-                        // Overall switch (permissionEnabled)
-                        sharingFields.put("permissionEnabled", doc.getBoolean("permissionEnabled") != null ? doc.getBoolean("permissionEnabled") : true); // Defaults to true
-                        // Detailed permissions
+
+                        // --- MODIFICATION: Removed reading "permissionEnabled" ---
+
+                        // Detailed permissions, defaulting to false if missing
                         sharingFields.put("rescueLogs", doc.getBoolean("rescueLogs") != null ? doc.getBoolean("rescueLogs") : false);
                         sharingFields.put("controllerAdherence", doc.getBoolean("controllerAdherence") != null ? doc.getBoolean("controllerAdherence") : false);
                         sharingFields.put("symptoms", doc.getBoolean("symptoms") != null ? doc.getBoolean("symptoms") : false);
@@ -161,10 +175,9 @@ public class ProviderListActivity extends AppCompatActivity
         sharingSettingsData.put("providerId", null); // Initial providerId is null
         sharingSettingsData.put("parentId", parentId);
 
-        // Overall permission switch, defaulting to true
-        sharingSettingsData.put("permissionEnabled", true);
 
         // 7 detailed sharing fields, defaulting to false
+        // NOTE: We initialize all 7 detailed fields here.
         sharingSettingsData.put("rescueLogs", false);
         sharingSettingsData.put("controllerAdherence", false);
         sharingSettingsData.put("symptoms", false);
@@ -205,6 +218,7 @@ public class ProviderListActivity extends AppCompatActivity
                     Toast.makeText(this, "Invite created: " + code, Toast.LENGTH_LONG).show();
 
                     // Refresh the list to show the new invite
+                    // We call loadProviderInvites() here to pick up the new invite immediately
                     loadProviderInvites();
 
                     // Navigate immediately to the settings page for configuration
