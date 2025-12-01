@@ -342,6 +342,14 @@ public class MedicineLogActivity extends AppCompatActivity {
                     medicineTypeSpinner.setSelection(0);
                     medicineSpinner.setSelection(0);
 
+                    //if child logged a controller dose, go to technique helper
+                    if ("controller".equals(type) && "child".equals(userType)) {
+                        Intent intent = new Intent(MedicineLogActivity.this, TechniqueHelperActivity.class);
+                        intent.putExtra("childId", currentChildId);
+                        intent.putExtra("childName", currentChildName);
+                        startActivity(intent);
+                    }
+
                     // reload the logs to show the updated logs if the user is viewing the same log type
                     if (type.equals(currentViewType)) {
                         loadLogs(currentViewType);

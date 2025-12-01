@@ -31,8 +31,8 @@ public class ParentMotivationSettingsActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         parentId = auth.getCurrentUser().getUid();
 
-        etControllerStreak = findViewById(R.id.etControllerStreak);
-        etTechniqueStreak = findViewById(R.id.etTechniqueStreak);
+//        etControllerStreak = findViewById(R.id.etControllerStreak);
+//        etTechniqueStreak = findViewById(R.id.etTechniqueStreak);
         etHQCount = findViewById(R.id.etHQCount);
         etLowRescue = findViewById(R.id.etLowRescue);
         btnSave = findViewById(R.id.btnSaveMotivationSettings);
@@ -53,11 +53,11 @@ public class ParentMotivationSettingsActivity extends AppCompatActivity {
 
                     if (!doc.exists()) return;
 
-                    Number c = (Number) doc.get("controllerStreakTarget");
-                    if (c != null) etControllerStreak.setText(String.valueOf(c.intValue()));
-
-                    Number t = (Number) doc.get("techniqueStreakTarget");
-                    if (t != null) etTechniqueStreak.setText(String.valueOf(t.intValue()));
+//                    Number c = (Number) doc.get("controllerStreakTarget");
+//                    if (c != null) etControllerStreak.setText(String.valueOf(c.intValue()));
+//
+//                    Number t = (Number) doc.get("techniqueStreakTarget");
+//                    if (t != null) etTechniqueStreak.setText(String.valueOf(t.intValue()));
 
                     Number h = (Number) doc.get("techniqueHighQualityCount");
                     if (h != null) etHQCount.setText(String.valueOf(h.intValue()));
@@ -69,14 +69,14 @@ public class ParentMotivationSettingsActivity extends AppCompatActivity {
 
     private void saveSettings() {
 
-        int c = parse(etControllerStreak.getText().toString(), 7);
-        int t = parse(etTechniqueStreak.getText().toString(), 7);
+//        int c = parse(etControllerStreak.getText().toString(), 7);
+//        int t = parse(etTechniqueStreak.getText().toString(), 7);
         int h = parse(etHQCount.getText().toString(), 10);
         int l = parse(etLowRescue.getText().toString(), 4);
 
         Map<String, Object> data = new HashMap<>();
-        data.put("controllerStreakTarget", c);
-        data.put("techniqueStreakTarget", t);
+//        data.put("controllerStreakTarget", c);
+//        data.put("techniqueStreakTarget", t);
         data.put("techniqueHighQualityCount", h);
         data.put("lowRescueThreshold", l);
 
