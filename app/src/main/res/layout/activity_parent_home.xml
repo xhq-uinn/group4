@@ -90,6 +90,17 @@
         app:layout_constraintStart_toEndOf="@id/buttonMedicineLog"
         app:layout_constraintTop_toBottomOf="@id/btnMotivationSettings" />
 
+    <Button
+        android:id="@+id/buttonGenerateReport"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:text="Generate Report"
+        app:layout_constraintTop_toBottomOf="@id/buttonInventory"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Recycler for Child List -->
 
@@ -101,7 +112,7 @@
         app:layout_constraintBottom_toTopOf="@id/btn_invite_provider"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonInventory" />
+        app:layout_constraintTop_toBottomOf="@id/buttonGenerateReport" />
 
     <Button
         android:id="@+id/btn_invite_provider"

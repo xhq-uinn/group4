@@ -12,8 +12,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,7 +34,8 @@ public class MedicineLogActivity extends AppCompatActivity {
 
     // UI components
     private TextView childNameText, logsHeaderText, noLogsText, unitTypeTitle;
-    private Button buttonRescueLogs, buttonControllerLogs, buttonSubmitLog, buttonRateLastDose, buttonFlagLow, buttonHome, buttonAlertConfiguration;
+    private Button buttonRescueLogs, buttonControllerLogs, buttonSubmitLog, buttonRateLastDose, buttonFlagLow, buttonHome, buttonAlertConfiguration, buttonScheduleConfiguration;
+
     private Spinner medicineSpinner, medicineTypeSpinner, unitTypeSpinner;
     private EditText customMedicineInput, doseCountInput;
     private RecyclerView logsRecyclerView;
@@ -87,6 +86,7 @@ public class MedicineLogActivity extends AppCompatActivity {
         buttonRateLastDose = findViewById(R.id.buttonRateLastDose);
         buttonFlagLow = findViewById(R.id.buttonFlagLow);
         buttonAlertConfiguration = findViewById(R.id.buttonAlertConfiguration);
+        buttonScheduleConfiguration = findViewById(R.id.buttonScheduleConfiguration);
         buttonHome = findViewById(R.id.buttonHome);
         medicineTypeSpinner = findViewById(R.id.medicineTypeSpinner);
         medicineSpinner = findViewById(R.id.medicineSpinner);
@@ -109,6 +109,7 @@ public class MedicineLogActivity extends AppCompatActivity {
         else
         {
             buttonAlertConfiguration.setVisibility(View.VISIBLE);
+            buttonScheduleConfiguration.setVisibility(View.VISIBLE);
         }
 
         logsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -163,6 +164,14 @@ public class MedicineLogActivity extends AppCompatActivity {
         buttonFlagLow.setOnClickListener(v -> showFlagLowDialog());
 
         buttonAlertConfiguration.setOnClickListener(v -> showRapidRescueSettings());
+
+        buttonScheduleConfiguration.setOnClickListener(v -> {
+            Intent intent = new Intent(MedicineLogActivity.this, ScheduleConfigurationActivity.class);
+            intent.putExtra("CHILD_ID", currentChildId);
+            intent.putExtra("CHILD_NAME", currentChildName);
+            intent.putExtra("USER_TYPE", userType);
+            startActivity(intent);
+        });
 
         buttonHome.setOnClickListener(v -> {
             Intent intent;
