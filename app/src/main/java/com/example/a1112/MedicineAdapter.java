@@ -81,14 +81,20 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
             expiryDateText.setText(expiryText);
 
             // displays different status message and color when expired or low amount left
-            if (medicine.isExpired()) { // status shows expired with red colors
-                statusText.setText("EXPIRED");
-                statusText.setBackgroundColor(0xFFFCE4E4);
-                statusText.setTextColor(0xFFD32F2F);
-            } else if (medicine.isLow()) { // status shows low with yellow colors
+            if (medicine.isFlaggedLowByChild()) { // status shows low with yellow colors
+                statusText.setText("FLAGGED LOW");
+                statusText.setBackgroundColor(0xFFFFF8E1);
+                statusText.setTextColor(0xFFF57C00);
+            }
+            else if (medicine.isLow()) { // status shows low with yellow colors
                 statusText.setText("LOW");
                 statusText.setBackgroundColor(0xFFFFF8E1);
                 statusText.setTextColor(0xFFF57C00);
+            }
+            else if (medicine.isExpired()) { // status shows expired with red colors
+                statusText.setText("EXPIRED");
+                statusText.setBackgroundColor(0xFFFCE4E4);
+                statusText.setTextColor(0xFFD32F2F);
             } else {
                 statusText.setText("OK"); // status shows ok with green colors
                 statusText.setBackgroundColor(0xFFE8F5E8);

@@ -170,7 +170,7 @@
         android:id="@+id/logsHeaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="RECENT RESCUE/CONTROLLER LOGS"
+        android:text="RECENT RESCUE LOGS"
         android:textSize="16sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
