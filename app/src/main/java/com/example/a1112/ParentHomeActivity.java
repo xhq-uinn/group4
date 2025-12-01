@@ -37,7 +37,7 @@ public class ParentHomeActivity extends AppCompatActivity {
     // UI
     private Button buttonAddChild;
     //    private Button buttonLinkChild;
-    private Button buttonInviteProvider;
+    //    private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
     private Button buttonInventory;
@@ -327,7 +327,7 @@ public class ParentHomeActivity extends AppCompatActivity {
             if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
                 updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr, redActionStr, yellowActionStr, greenActionStr);//changed here
             } else {
-                Toast.makeText(this, "Name and DOB required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Name and age required", Toast.LENGTH_SHORT).show();
             }
         });
 

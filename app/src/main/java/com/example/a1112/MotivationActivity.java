@@ -29,10 +29,9 @@ public class MotivationActivity extends AppCompatActivity {
 //        tvBadges.setText("");
 
 
-//        new MotivationCalculator().updateAllMotivation(childId, () -> {
-            // load UI after calculating
+        new MotivationCalculator().updateAllMotivation(childId, () -> {
             loadMotivationUI();
-//        });
+        });
     }
 
     private void loadMotivationUI() {

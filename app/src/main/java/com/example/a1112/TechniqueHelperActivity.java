@@ -3,6 +3,7 @@ package com.example.a1112;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -15,21 +16,28 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class TechniqueHelperActivity extends AppCompatActivity {
 
+    private static final String TAG = "TechniqueHelperActivity";
+
+    // UI components
     private TextView tvStepTitle, tvStepDescription, tvCountdown;
     private PlayerView videoStep;
-    private Button btnNextStep, btnRestart;
+    private Button btnRestart;
+    private Button btnFinish; // NEW: Explicit Finish button
     private LinearLayout llTechniqueQuality;
-    private Button btnHighQuality, btnNormalQuality, btnNeedAssistance;
+    private Button btnHighQuality, btnNeedAssistance;
 
     private ExoPlayer player;
     private List<Step> steps;
@@ -37,6 +45,11 @@ public class TechniqueHelperActivity extends AppCompatActivity {
     private CountDownTimer countDownTimer;
 
     private String childId;
+    private FirebaseFirestore db;
+    private String sessionId; // Unique ID for tracking the current session in Firestore
+    private boolean isLowQuality = false; // Tracks if the user failed any step
+    private boolean isFinished = false; // Tracks if the session reached the end
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,26 +63,31 @@ public class TechniqueHelperActivity extends AppCompatActivity {
             return;
         }
 
+        db = FirebaseFirestore.getInstance();
+        initializeSession(); // Start tracking the session in Firestore
+
         // Initialize UI components
         tvStepTitle = findViewById(R.id.tvStepTitle);
         tvStepDescription = findViewById(R.id.tvStepDescription);
         tvCountdown = findViewById(R.id.tvCountdown);
         videoStep = findViewById(R.id.videoStep);
-        btnNextStep = findViewById(R.id.btnNextStep);
+
         btnRestart = findViewById(R.id.btnRestart);
+        btnFinish = findViewById(R.id.btnFinish);
         llTechniqueQuality = findViewById(R.id.llTechniqueQuality);
         btnHighQuality = findViewById(R.id.btnHighQuality);
-        btnNormalQuality = findViewById(R.id.btnNormalQuality);
         btnNeedAssistance = findViewById(R.id.btnNeedAssistance);
 
-        btnRestart.setVisibility(View.GONE);
-        llTechniqueQuality.setVisibility(View.GONE);
+        // UI setup
+        btnRestart.setVisibility(View.GONE); // Hide Restart by default
+        btnFinish.setVisibility(View.GONE); // NEW: Hide Finish by default
+        llTechniqueQuality.setVisibility(View.VISIBLE); // Show navigation by default
 
         // Initialize ExoPlayer
         player = new ExoPlayer.Builder(this).build();
         videoStep.setPlayer(player);
 
-        // Initialize steps
+        // Initialize steps (Retained original data)
         steps = new ArrayList<>();
         steps.add(new Step("Prepare Your Inhaler", "Remove the mouthpiece cap and shake before use.",
                 "android.resource://" + getPackageName() + "/" + R.raw.video1, 0));
@@ -94,32 +112,172 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         steps.add(new Step("Second Puff if Needed", "If your medicine requires two puffs, follow your inhaler instructions to know how long to wait between doses.",
                 "android.resource://" + getPackageName() + "/" + R.raw.video11, 60));
 
-        // Load first step
         loadStep(currentStepIndex);
+        setupListeners();
+    }
 
-        // Next Step click
-        btnNextStep.setOnClickListener(v -> goToNextStep());
+    // --- Firestore Session Tracking ---
 
-        // Restart button click (jump to Step 5)
+    /**
+     * Creates a new unique session ID and initializes the document in Firestore
+     * with default quality 'high-quality' and completed 'false'.
+     */
+    private void initializeSession() {
+        // Only generate a new ID and create the session on initial launch
+        sessionId = UUID.randomUUID().toString();
+        isLowQuality = false; // Reset quality for new session
+        isFinished = false;
+        updateSessionQuality("high-quality", true);
+        Log.i(TAG, "New technique session started with ID: " + sessionId);
+    }
+
+    /**
+     * Updates the session quality and completion status in Firestore.
+     * @param quality The session quality ("high-quality" or "low-quality").
+     * @param isInitialCreation True if this is the first time writing the document.
+     */
+    private void updateSessionQuality(String quality, boolean isInitialCreation) {
+        Map<String, Object> sessionUpdate = new HashMap<>();
+        sessionUpdate.put("quality", quality);
+
+        // Use the flag isFinished to determine the 'completed' status
+        sessionUpdate.put("completed", isFinished);
+
+        if (isInitialCreation) {
+            sessionUpdate.put("timestamp", FieldValue.serverTimestamp());
+        }
+
+        DocumentReference docRef = db.collection("children")
+                .document(childId)
+                .collection("technique_sessions")
+                .document(sessionId);
+
+        docRef.set(sessionUpdate, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "Session quality updated to: " + quality + ", Completed: " + isFinished))
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to update session quality: " + e.getMessage()));
+    }
+
+    // --- Listeners and Navigation ---
+
+    // TechniqueHelperActivity.java
+
+// --- Listeners and Navigation ---
+
+    // TechniqueHelperActivity.java
+
+// --- Listeners and Navigation ---
+
+    private void setupListeners() {
+
+        // 1. High Quality Button: Marks high quality AND moves to the next step.
+        btnHighQuality.setOnClickListener(v -> {
+            Log.d(TAG, "Step " + (currentStepIndex + 1) + " marked as High Quality. Proceeding.");
+            goToNextStep();
+        });
+
+        // 2. Need Assistance Button (Low Quality): Flags the entire session as low quality,
+        // immediately updates Firestore to 'low-quality', and moves to the next step.
+        btnNeedAssistance.setOnClickListener(v -> {
+            isLowQuality = true; // Set local flag for low quality
+
+            // IMPORTANT FIX: Immediately update Firestore quality to low-quality.
+            // We use the current sessionId and keep isFinished=false.
+            updateSessionQuality("low-quality", false);
+
+            Toast.makeText(this, "Marked Step " + (currentStepIndex + 1) + " as LOW Quality. Session is now Low Quality.", Toast.LENGTH_SHORT).show();
+            goToNextStep();
+        });
+
+        // 3. Restart button click (jump to Step 5) - NO NEW SESSION ID
         btnRestart.setOnClickListener(v -> {
+            // Reset state for new attempt using the SAME session ID
+            isLowQuality = false; // Reset quality flag
+            isFinished = false;
             currentStepIndex = 4; // Step 5 index
+
+            // UI Reset
             btnRestart.setVisibility(View.GONE);
-            btnNextStep.setEnabled(true);
-            btnNextStep.setVisibility(View.VISIBLE);
-            llTechniqueQuality.setVisibility(View.GONE);
+            btnFinish.setVisibility(View.GONE);
             videoStep.setVisibility(View.VISIBLE);
+            llTechniqueQuality.setVisibility(View.VISIBLE);
+
+            // Update Firestore: Reset quality to high-quality (for the attempt) and mark completed=false
+            updateSessionQuality("high-quality", false);
+
             loadStep(currentStepIndex);
+        });
+
+        // 4. Finish button click - Explicitly marks session as COMPLETED
+        btnFinish.setOnClickListener(v -> {
+            isFinished = true; // Mark session as finished
+            String finalQuality = isLowQuality ? "low-quality" : "high-quality";
+
+            // Write the final quality and set completed=true in Firestore
+            updateSessionQuality(finalQuality, false);
+
+            // Final UI confirmation before exiting
+            tvStepTitle.setText("Session Finished!");
+            tvStepDescription.setText("Your technique session has been saved with quality: " + finalQuality);
+            btnRestart.setVisibility(View.GONE);
+            btnFinish.setVisibility(View.GONE);
+            Toast.makeText(this, "Session Completed! Thank you.", Toast.LENGTH_LONG).show();
+
+            // Optional: Auto-close after a few seconds
+            // new android.os.Handler().postDelayed(() -> finish(), 3000);
         });
     }
 
+    /**
+     * Handles progression to the next step or shows the final control buttons.
+     */
+    private void goToNextStep() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+            tvCountdown.setVisibility(View.GONE);
+        }
+
+        currentStepIndex++;
+        if (currentStepIndex < steps.size()) {
+            loadStep(currentStepIndex);
+        } else {
+            // All steps reviewed. Show final options (Restart or Finish).
+
+            // UI update: Hide navigation, show Restart and Finish
+            llTechniqueQuality.setVisibility(View.GONE); // Hide High/Low quality buttons
+            btnRestart.setVisibility(View.VISIBLE); // Show Restart button
+            btnFinish.setVisibility(View.VISIBLE); // NEW: Show Finish button
+            videoStep.setVisibility(View.GONE);
+
+            String status = isLowQuality ? "needs practice" : "looks good";
+            tvStepTitle.setText("Review Complete!");
+            tvStepDescription.setText("Your technique " + status + ". Choose to Finish and Save, or Restart from Step 5.");
+        }
+    }
+
+    // (loadStep, startCountdown, Step class, and Lifecycle methods remain the same as the final version)
+
+    /**
+     * Loads the UI content for the current step, prepares the video, and updates button text.
+     */
     private void loadStep(int index) {
+        // Update button text for the final step
+        if (index == steps.size() - 1) {
+            btnHighQuality.setText("Yes, High Quality (Continue to Review)");
+            btnNeedAssistance.setText("Need Assistance (Low Quality & Continue to Review)");
+        } else {
+            btnHighQuality.setText("Yes, High Quality (Next Step)");
+            btnNeedAssistance.setText("Need Assistance (Low Quality & Next Step)");
+        }
+
         Step step = steps.get(index);
         tvStepTitle.setText("Step " + (index + 1) + ": " + step.title);
         tvStepDescription.setText(step.description);
 
+        // Original logic: always set and prepare media
         MediaItem mediaItem = MediaItem.fromUri(Uri.parse(step.videoUrl));
         player.setMediaItem(mediaItem);
         player.prepare();
+        player.seekTo(0);
         player.play();
 
         tvCountdown.setVisibility(View.GONE);
@@ -137,6 +295,9 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Starts the countdown timer for steps requiring a hold or wait period.
+     */
     private void startCountdown(int seconds) {
         tvCountdown.setVisibility(View.VISIBLE);
         countDownTimer = new CountDownTimer(seconds * 1000L, 1000) {
@@ -152,64 +313,40 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         }.start();
     }
 
-    private void goToNextStep() {
-        if (countDownTimer != null) {
-            countDownTimer.cancel();
-            tvCountdown.setVisibility(View.GONE);
+    // --- Lifecycle Methods ---
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // If the session is incomplete (not finished), mark it as low quality upon exit.
+        if (!isFinished) {
+            updateSessionQuality("low-quality", false);
+            Log.w(TAG, "Session incomplete. Quality set to low-quality on pause.");
         }
-
-        currentStepIndex++;
-        if (currentStepIndex < steps.size()) {
-            loadStep(currentStepIndex);
-        } else {
-            // Last step completed
-            btnNextStep.setVisibility(View.GONE);
-            btnRestart.setVisibility(View.VISIBLE);
-            videoStep.setVisibility(View.GONE);
-            tvStepTitle.setText("Technique Completed!");
-            tvStepDescription.setText("Please select the session quality.");
-            llTechniqueQuality.setVisibility(View.VISIBLE);
-
-            btnHighQuality.setOnClickListener(v -> saveSessionQuality("High Quality"));
-            btnNormalQuality.setOnClickListener(v -> saveSessionQuality("Normal"));
-            btnNeedAssistance.setOnClickListener(v -> saveSessionQuality("Need Assistance"));
+        if (player != null) {
+            player.pause();
         }
-    }
-
-    private void saveSessionQuality(String quality) {
-        llTechniqueQuality.setVisibility(View.GONE);
-        btnRestart.setVisibility(View.VISIBLE);
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        Map<String, Object> sessionData = new HashMap<>();
-        sessionData.put("quality", quality);
-        sessionData.put("timestamp", FieldValue.serverTimestamp());
-
-        db.collection("children")
-                .document(childId)
-                .collection("technique_sessions")
-                .add(sessionData)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(this, "Session quality saved!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error saving session: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        player.pause();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        player.release();
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+        if (player != null) {
+            player.release();
+        }
     }
 
+    /**
+     * Helper class to define a single step in the technique session.
+     */
     private static class Step {
         String title;
         String description;

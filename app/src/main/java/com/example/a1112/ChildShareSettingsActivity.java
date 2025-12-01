@@ -1,7 +1,7 @@
 package com.example.a1112;
 
 import android.os.Bundle;
-import android.util.Log; // Import Log for debugging
+import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Toast;
@@ -20,7 +20,7 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = "ChildShareSettings";
 
-    private CheckBox cbPermissionEnabled; // Overall sharing control switch
+    // cbPermissionEnabled is REMOVED from the fields list.
     private CheckBox cbRescueLogs, cbController, cbSymptoms, cbTriggers,
             cbPeakFlow, cbTriage, cbSummary; // Detailed, granular sharing options
 
@@ -50,7 +50,7 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         // Initialize CheckBox views from the layout
-        cbPermissionEnabled = findViewById(R.id.cbPermissionEnabled);
+        // NOTE: cbPermissionEnabled initialization removed here.
         cbRescueLogs = findViewById(R.id.cbRescueLogs);
         cbController = findViewById(R.id.cbController);
         cbSymptoms = findViewById(R.id.cbSymptoms);
@@ -71,75 +71,104 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
                 .document(inviteCode);
 
         docRef.get().addOnSuccessListener(snapshot -> {
-            if (!snapshot.exists()) return;
+            // Document does not exist (new setup) OR Document exists (existing setup)
+            // In both cases, default unchecked/false if the field is missing.
 
-            // Determine the state of the overall permission switch (defaults to true)
-            boolean permissionEnabled = Boolean.TRUE.equals(snapshot.getBoolean("permissionEnabled"));
+            // Load and set the state of the 7 detailed CheckBoxes
 
-            // NEW: Load the state of the overall switch
-            cbPermissionEnabled.setChecked(permissionEnabled);
+            // Rescue logs
+            boolean rescueLogsChecked = Boolean.TRUE.equals(snapshot.getBoolean("rescueLogs"));
+            setCheckboxText(cbRescueLogs, "Rescue logs", rescueLogsChecked);
+            cbRescueLogs.setChecked(rescueLogsChecked);
 
-            // Load the status of the other 7 detailed CheckBoxes
-            cbRescueLogs.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("rescueLogs")));
-            cbController.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("controllerAdherence")));
-            cbSymptoms.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("symptoms")));
-            cbTriggers.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("triggers")));
-            cbPeakFlow.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("peakFlow")));
-            cbTriage.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("triageIncidents")));
-            cbSummary.setChecked(Boolean.TRUE.equals(snapshot.getBoolean("summaryCharts")));
+            // Controller adherence
+            boolean controllerChecked = Boolean.TRUE.equals(snapshot.getBoolean("controllerAdherence"));
+            setCheckboxText(cbController, "Controller adherence", controllerChecked);
+            cbController.setChecked(controllerChecked);
 
-            // NEW: Based on the loaded overall status, enable or disable the detailed switches
-            setDetailedPermissionEnabled(permissionEnabled);
+            // Symptoms
+            boolean symptomsChecked = Boolean.TRUE.equals(snapshot.getBoolean("symptoms"));
+            setCheckboxText(cbSymptoms, "Symptoms", symptomsChecked);
+            cbSymptoms.setChecked(symptomsChecked);
+
+            // Triggers
+            boolean triggersChecked = Boolean.TRUE.equals(snapshot.getBoolean("triggers"));
+            setCheckboxText(cbTriggers, "Triggers", triggersChecked);
+            cbTriggers.setChecked(triggersChecked);
+
+            // Peak-flow
+            boolean peakFlowChecked = Boolean.TRUE.equals(snapshot.getBoolean("peakFlow"));
+            setCheckboxText(cbPeakFlow, "Peak-flow", peakFlowChecked);
+            cbPeakFlow.setChecked(peakFlowChecked);
+
+            // Triage incidents
+            boolean triageChecked = Boolean.TRUE.equals(snapshot.getBoolean("triageIncidents"));
+            setCheckboxText(cbTriage, "Triage incidents", triageChecked);
+            cbTriage.setChecked(triageChecked);
+
+            // Summary charts
+            boolean summaryChecked = Boolean.TRUE.equals(snapshot.getBoolean("summaryCharts"));
+            setCheckboxText(cbSummary, "Summary charts", summaryChecked);
+            cbSummary.setChecked(summaryChecked);
+
+            // NOTE: setDetailedPermissionEnabled() method is now removed, as permissions are always enabled.
         });
     }
 
-    private void setDetailedPermissionEnabled(boolean isEnabled) {
-        cbRescueLogs.setEnabled(isEnabled);
-        cbController.setEnabled(isEnabled);
-        cbSymptoms.setEnabled(isEnabled);
-        cbTriggers.setEnabled(isEnabled);
-        cbPeakFlow.setEnabled(isEnabled);
-        cbTriage.setEnabled(isEnabled);
-        cbSummary.setEnabled(isEnabled);
+    // NOTE: setDetailedPermissionEnabled() method is removed.
+
+    private void setCheckboxText(CheckBox cb, String baseText, boolean isChecked) {
+        if (isChecked) {
+            cb.setText(baseText + " (Shared with Provider)");
+        } else {
+            cb.setText(baseText);
+        }
     }
 
     private void setupListeners() {
         // General listener: used to map CheckBox ID to the corresponding Firestore field name
         CompoundButton.OnCheckedChangeListener generalListener = (buttonView, isChecked) -> {
             String field = null;
+            String baseText = "";
+            CheckBox currentCheckbox = (CheckBox) buttonView;
 
-            // Determine the Firestore field name based on the CheckBox ID
+            // Determine the Firestore field name AND the base text based on the CheckBox ID
             if (buttonView.getId() == R.id.cbRescueLogs) {
                 field = "rescueLogs";
+                baseText = "Rescue logs";
             } else if (buttonView.getId() == R.id.cbController) {
                 field = "controllerAdherence";
+                baseText = "Controller adherence";
             } else if (buttonView.getId() == R.id.cbSymptoms) {
                 field = "symptoms";
+                baseText = "Symptoms";
             } else if (buttonView.getId() == R.id.cbTriggers) {
                 field = "triggers";
+                baseText = "Triggers";
             } else if (buttonView.getId() == R.id.cbPeakFlow) {
                 field = "peakFlow";
+                baseText = "Peak-flow";
             } else if (buttonView.getId() == R.id.cbTriage) {
                 field = "triageIncidents";
+                baseText = "Triage incidents";
             } else if (buttonView.getId() == R.id.cbSummary) {
                 field = "summaryCharts";
+                baseText = "Summary charts";
             }
 
             if (field != null) {
+                // Update the CheckBox text dynamically
+                setCheckboxText(currentCheckbox, baseText, isChecked);
+
+                // Update Firestore
                 updateSharingField(field, isChecked);
             }
         };
 
-        // Specific listener for the overall switch: handles Firestore update AND UI linkage
-        cbPermissionEnabled.setOnCheckedChangeListener((buttonView, isEnabled) -> {
-            // Update the 'permissionEnabled' field in Firestore
-            updateSharingField("permissionEnabled", isEnabled);
+        // NOTE: Specific listener for cbPermissionEnabled is removed.
+        // NOTE: All helper methods for managing listeners are removed.
 
-            // UI Linkage: Enable or disable the other 7 detailed CheckBoxes
-            setDetailedPermissionEnabled(isEnabled);
-        });
-
-        // Attach the general Firestore update listener to the other 7 detailed CheckBoxes
+        // Attach the general Firestore update and text update listener to the 7 detailed CheckBoxes
         cbRescueLogs.setOnCheckedChangeListener(generalListener);
         cbController.setOnCheckedChangeListener(generalListener);
         cbSymptoms.setOnCheckedChangeListener(generalListener);
@@ -148,6 +177,8 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
         cbTriage.setOnCheckedChangeListener(generalListener);
         cbSummary.setOnCheckedChangeListener(generalListener);
     }
+
+    // NOTE: Helper methods (removeDetailedListeners, attachDetailedListeners, setDetailedCheckboxes, updateAllDetailedFields) are REMOVED.
 
     private void updateSharingField(String field, boolean value) {
         Map<String, Object> update = new HashMap<>();

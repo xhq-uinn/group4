@@ -44,18 +44,18 @@
         android:layout_marginEnd="12dp"
         android:text="Add Child"
         app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
-        app:layout_constraintEnd_toStartOf="@id/btn_link_child"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/textChildrenListTitle"
         app:layout_constraintVertical_bias="0.476" />
 
-    <Button
-        android:id="@+id/btn_link_child"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Link Child"
-        app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
+<!--    <Button-->
+<!--        android:id="@+id/btn_link_child"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Link Child"-->
+<!--        app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />-->
     <Button
         android:id="@+id/btnMotivationSettings"
         android:layout_width="0dp"
@@ -64,7 +64,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginTop="16dp"
         android:text="Motivation Settings"
-        app:layout_constraintTop_toBottomOf="@id/btn_link_child"
+        app:layout_constraintTop_toBottomOf="@id/btn_add_child"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -109,22 +109,10 @@
         android:layout_width="334dp"
         android:layout_height="504dp"
         android:layout_marginTop="12dp"
-        app:layout_constraintBottom_toTopOf="@id/btn_invite_provider"
+        app:layout_constraintBottom_toTopOf="@id/btn_signout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/buttonGenerateReport" />
-
-    <Button
-        android:id="@+id/btn_invite_provider"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:layout_marginBottom="48dp"
-        android:text="Invite Provider"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/btn_signout"
