@@ -22,24 +22,6 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingVertical="8dp"
-            android:layout_marginBottom="16dp"
-            android:background="#F0F0F0">
-
-            <CheckBox
-                android:id="@+id/cbPermissionEnabled"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Overall Sharing Enabled"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
             android:paddingVertical="8dp">
 
             <CheckBox

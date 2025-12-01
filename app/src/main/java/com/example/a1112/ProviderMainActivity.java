@@ -1,6 +1,9 @@
 package com.example.a1112;
 
+import static androidx.fragment.app.FragmentManager.TAG;
+
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -110,28 +113,32 @@ public class ProviderMainActivity extends AppCompatActivity {
         buttonBack.setOnClickListener(v -> finish());
     }
 
-    // real time listener to set up or update visibility based on most updated sharing settings
     private void setupSharedSettingsListener() {
         sharingListener = db.collection("children")
                 .document(childId)
                 .collection("sharingSettings")
                 .whereEqualTo("providerId", providerId)
                 .addSnapshotListener((result, error) -> {
-                    if (error != null) return;
-                    if (result == null || result.isEmpty()) {
-                        hideAllInfo();
+                    if (error != null) {
+                        Log.e(TAG, "Error listening to sharing settings.", error);
+
+                        // Replace hideAllInfo() with direct calls to hide all sections
+                        hideAllSectionsDueToError();
                         return;
                     }
 
-                    //get the settings instance and update all visibilities accordingly
+                    if (result == null || result.isEmpty()) {
+                        // If no matching document is found (shouldn't happen if accepted), hide everything
+                        // Replace hideAllInfo() with direct calls to hide all sections
+                        hideAllSectionsDueToError();
+                        return;
+                    }
+
+                    // get the settings instance and update all visibilities accordingly
                     DocumentSnapshot doc = result.getDocuments().get(0);
 
-                    Boolean permissionEnabled = doc.getBoolean("permissionEnabled");
-                    if (permissionEnabled == null || !permissionEnabled) {
-
-                        hideAllInfo();
-                        return;
-                    }
+                    // We now rely entirely on the individual sharing settings.
+                    // If a field is missing (null), the updateXxxVisibility method will hide that section.
                     updateRescueLogsVisibility(doc.getBoolean("rescueLogs"));
                     updateControllerAdherenceVisibility(doc.getBoolean("controllerAdherence"));
                     updateSymptomsVisibility(doc.getBoolean("symptoms"));
@@ -142,8 +149,9 @@ public class ProviderMainActivity extends AppCompatActivity {
                 });
     }
 
-    //makes all displays invisible when permissionEnabled is set to false
-    private void hideAllInfo() {
+    // NEW: Dedicated helper to hide all sections in case of error or missing document
+    private void hideAllSectionsDueToError() {
+        // Pass 'false' to all update functions to ensure everything is hidden.
         updateRescueLogsVisibility(false);
         updateControllerAdherenceVisibility(false);
         updateSymptomsVisibility(false);
