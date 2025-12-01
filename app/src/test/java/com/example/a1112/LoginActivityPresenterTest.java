@@ -47,8 +47,24 @@ public class LoginActivityPresenterTest {
     }
 
     @Test
+    public void adultAndChildBothFilled_showsMixedLoginError_fromAdultBranch_no_username() {
+        presenter.handleLogin("p@example.com", "pass", "", "kidPass");
+
+        verify(mockView).showMessage("child login or adult login, not both");
+        verifyNoInteractions(mockModel);
+    }
+
+    @Test
     public void adultAndChildBothFilled_showsMixedLoginError_fromChildBranch() {
         presenter.handleLogin("p@example.com", "", "kidUser", "kidPass");
+
+        verify(mockView).showMessage("child login or adult login, not both");
+        verifyNoInteractions(mockModel);
+    }
+
+    @Test
+    public void adultAndChildBothFilled_showsMixedLoginError_fromChildBranch_no_username() {
+        presenter.handleLogin("", "pass", "kidUser", "kidPass");
 
         verify(mockView).showMessage("child login or adult login, not both");
         verifyNoInteractions(mockModel);
@@ -171,6 +187,14 @@ public class LoginActivityPresenterTest {
         verify(mockView).showMessage("Fill in login info");
         verifyNoInteractions(mockModel);
     }
+//
+//    @Test
+//    public void weakAdultPassword_showsWeakPasswordMessage() {
+//        presenter.handleLogin("p@example.com", "12345", "", "");
+//
+//        verify(mockView).showMessage("Password must be at least 6 characters");
+//        verifyNoInteractions(mockModel);
+//    }
 
     @Test
     public void incompleteChildCredentials_showsFillInLoginInfo() {
