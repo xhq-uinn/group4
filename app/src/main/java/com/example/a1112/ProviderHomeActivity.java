@@ -123,6 +123,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
                         String childId = inviteDoc.getString("childId");
                         Date createdAt = inviteDoc.getDate("createdAt");
 
+                        //make sure code isnt used, expired or provider isnt already linked to that child.
                         if (used != null && used) {
                             Toast.makeText(this, "This code has already been used", Toast.LENGTH_SHORT).show();
                             return;
@@ -130,6 +131,11 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
                         if (createdAt == null || isInviteExpired(createdAt)) {
                             Toast.makeText(this, "Invite code expired", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (isChildAlreadyLinked(childId)) {
+                            Toast.makeText(this, "This child is already in your patient list", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
@@ -256,10 +262,19 @@ public class ProviderHomeActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error updating invite", Toast.LENGTH_SHORT).show());
     }
-
+    //helper to check whether 7 days in milliseconds have passed since invites creation
     private boolean isInviteExpired(Date createdAt) {
         long sevenDaysMs = 7L * 24 * 60 * 60 * 1000;
         return System.currentTimeMillis() - createdAt.getTime() > sevenDaysMs;
+    }
+    //helper that returns true iff the parameter child is already in the providers' patient list
+    private boolean isChildAlreadyLinked(String childId) {
+        for (Child child : patientList) {
+            if (child.getId().equals(childId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

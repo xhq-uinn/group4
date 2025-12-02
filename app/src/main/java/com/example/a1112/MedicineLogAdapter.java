@@ -1,5 +1,6 @@
 package com.example.a1112;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +56,11 @@ public class MedicineLogAdapter extends RecyclerView.Adapter<MedicineLogAdapter.
         }
 
         public void bind(MedicineLog log) {
+
+            Log.d("MedicineLogAdapter", "Medicine: " + log.getMedicineName() +
+                    ", UnitType: '" + log.getUnitType() + "'" +
+                    ", UnitType null? " + (log.getUnitType() == null) +
+                    ", UnitType empty? " + (log.getUnitType() != null && log.getUnitType().isEmpty()));
             //setup display of medicine log items (name, timestamp, dose count, logged by and color coded post feeling(optional))
 
             logMedicineNameText.setText(log.getMedicineName());
@@ -69,10 +75,10 @@ public class MedicineLogAdapter extends RecyclerView.Adapter<MedicineLogAdapter.
 
             int doseCount = log.getDoseCount();
             if (doseCount == 1) {
-                if (unitType == "puffs") {
+                if (unitType.equals("puffs")) {
                     logDetailsText.setText( "1 puff | Logged by " + log.getLoggedBy());
                 }
-                else if (unitType == "measures") {
+                else if (unitType.equals("measures")) {
                     logDetailsText.setText("1 measure | Logged by " + log.getLoggedBy());
                 }
                 else

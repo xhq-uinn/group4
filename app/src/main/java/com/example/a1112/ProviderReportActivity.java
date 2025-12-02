@@ -627,11 +627,20 @@ public class ProviderReportActivity extends AppCompatActivity {
 
     //create a pdf and store it in the device using the layout
     private void createPdf() {
+        //hide buttons before creating and make sure layout updates
+        buttonExportPdf.setVisibility(View.GONE);
+        buttonHome.setVisibility(View.GONE);
+        reportContent.invalidate();
+        reportContent.requestLayout();
 
         //create a bitmap of the layout and a pdf with same dimensions and draw the bitmap onto the pdf
         Bitmap bitmap = Bitmap.createBitmap(reportContent.getWidth(), reportContent.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         reportContent.draw(canvas);
+
+        //restore button visibility
+        buttonExportPdf.setVisibility(View.VISIBLE);
+        buttonHome.setVisibility(View.VISIBLE);
 
         PdfDocument document = new PdfDocument();
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(bitmap.getWidth(), bitmap.getHeight(), 1).create();
