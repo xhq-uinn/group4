@@ -19,7 +19,7 @@ import android.graphics.Color;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.DocumentSnapshot;
-
+import com.github.mikephil.charting.charts.LineChart;
 
 public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHolder> {
 
@@ -107,7 +107,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
         TextView lastRescueText;
 
         // Trend chart
-        ChartHelper chartTrend;
+        LineChart chartTrend;
         RadioGroup trendRangeGroup;
         RadioButton rbTrend7d;
         RadioButton rbTrend30d;
