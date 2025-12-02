@@ -123,7 +123,7 @@ public class ChildHomeActivity extends AppCompatActivity {
         }
         if (out != null) {
             out.setOnClickListener(v -> {
-                Intent intent = new Intent(ChildHomeActivity.this, LoginActivity.class);
+                Intent intent = new Intent(ChildHomeActivity.this, LoginActivityView.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();

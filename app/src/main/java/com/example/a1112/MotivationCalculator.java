@@ -16,9 +16,8 @@ public class MotivationCalculator {
         void onComplete();
     }
 
-    // ============================================================
-    // PUBLIC ENTRY
-    // ============================================================
+
+    //public entry
     public void updateAllMotivation(String childId, Callback callback) {
 
         db.collection("children").document(childId)
@@ -39,14 +38,13 @@ public class MotivationCalculator {
                 });
     }
 
-    // ============================================================
-    // SETTINGS
-    // ============================================================
+
+    //settings
     private static class Settings {
-        int controllerStreakTarget = 7;        // perfect week target
-        int techniqueStreakTarget = 7;         // if needed
-        int techniqueHighQualityCount = 10;    // high-quality threshold
-        int lowRescueThreshold = 4;            // rescue days allowed
+        int controllerStreakTarget = 7;//perfect week target
+        int techniqueStreakTarget = 7;//if needed
+        int techniqueHighQualityCount = 10;//high-quality threshold
+        int lowRescueThreshold = 4;//rescue days allowed
     }
 
     private interface SettingsCallback {
@@ -87,9 +85,8 @@ public class MotivationCalculator {
                 });
     }
 
-    // ============================================================
-    // LOAD EVERYTHING
-    // ============================================================
+
+    //load everything
     private void loadEverything(String childId, Settings settings, Callback callback) {
 
         List<MedicineLog> controllerLogs = new ArrayList<>();
@@ -151,9 +148,8 @@ public class MotivationCalculator {
                 });
     }
 
-    // ============================================================
-    // MAIN COMPUTATION
-    // ============================================================
+
+    // main computation
     private void computeAndSave(
             String childId,
             Settings settings,
@@ -191,9 +187,8 @@ public class MotivationCalculator {
                 .addOnSuccessListener(v -> callback.onComplete());
     }
 
-    // ============================================================
-    // NORMALIZATION HELPERS
-    // ============================================================
+
+    //normalization helpers
     private Map<String, Integer> buildControllerDayMap(List<MedicineLog> logs) {
         Map<String, Integer> map = new HashMap<>();
         Calendar c = Calendar.getInstance();
@@ -232,9 +227,8 @@ public class MotivationCalculator {
         return map;
     }
 
-    // ============================================================
-    // STREAK CALCULATION (FINAL RULE)
-    // ============================================================
+
+    //streak calculation
     private int computeControllerStreak(ControllerSchedule schedule, Map<String, Integer> controllerMap) {
         if (schedule == null) return 0;
 
@@ -301,9 +295,7 @@ public class MotivationCalculator {
         return streak;
     }
 
-    // ============================================================
-    // BADGE CONDITIONS
-    // ============================================================
+    //badges
     private boolean computePerfectWeek(List<MedicineLog> logs, Settings s) {
         // Build day-completed map
         Set<String> completedDays = new HashSet<>();
@@ -362,9 +354,8 @@ public class MotivationCalculator {
     }
 
 
-    // ============================================================
-    // MODELS
-    // ============================================================
+
+    //models
     private static class TechSession {
         public String quality;
         public boolean completed;
