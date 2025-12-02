@@ -187,9 +187,9 @@ Provides at-a-glance status for parents and a provider-ready summary.
 
 # 5. Assumptions *to be added
 
-- Parent may have multiple children
+- Parent may have multiple children, but each child can only have 1 parent
 - Invite code cannot be revoked after provider accepts invitation
-- PEF is manually entered
+- PEF and PB are manually entered
 - Internet required
 
 ---
@@ -240,22 +240,7 @@ No tests were written for other modules.
 
 ---
 
-# 9. Project Structure
-
-```
-app/
- ├── model/
- ├── presenter/
- ├── view/
- ├── adapters/
- ├── utils/
- ├── services/
- └── src/test/java/... (Login presenter tests)
-```
-
----
-
-# 10. Scrum Process Summary
+# 9. Scrum Process Summary
 
 - 3 sprints - 
 - sprint 1: R1, R2
@@ -267,7 +252,7 @@ app/
 
 ---
 
-# 11. Team Members (Alphabetical by Last Name)
+# 10. Team Members (Alphabetical by Last Name)
 
 - Adam Belquas
 - Lemeng Wang
