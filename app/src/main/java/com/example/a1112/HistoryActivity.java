@@ -290,15 +290,15 @@ public class HistoryActivity extends AppCompatActivity {
                     }
 
                     Collections.sort(loadedRecords, (r1, r2) -> {
-                        // 1. Get date strings
+                        // Get date strings
                         String dateStr1 = (String) r1.get("date");
                         String dateStr2 = (String) r2.get("date");
 
                         if (dateStr1 == null && dateStr2 == null) return 0;
-                        if (dateStr1 == null) return 1;  // null 放后面
+                        if (dateStr1 == null) return 1;
                         if (dateStr2 == null) return -1;
 
-                        // 2. Parse date strings into Date objects for comparison
+                        // Parse date strings into Date objects for comparison
                         Date date1 = parseDateToDate(dateStr1);
                         Date date2 = parseDateToDate(dateStr2);
 
@@ -306,7 +306,7 @@ public class HistoryActivity extends AppCompatActivity {
                         if (date1 == null) return 1;
                         if (date2 == null) return -1;
 
-                        // 3. Compare Dates (Descending order: newest first)
+                        // Compare Dates (Descending order: newest first)
                         return date2.compareTo(date1);
                     });
 
@@ -314,7 +314,6 @@ public class HistoryActivity extends AppCompatActivity {
                     for (Map<String, Object> record : loadedRecords) {
                         addRecordView(record);
                     }
-                    // ==========================================================
 
 
                     Toast.makeText(this, "Loaded " + loadedRecords.size() + " records", Toast.LENGTH_SHORT).show();

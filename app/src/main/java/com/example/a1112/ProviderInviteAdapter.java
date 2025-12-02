@@ -23,16 +23,10 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
 
 
     public interface OnInviteActionListener {
-        /**
-         * Handles the delete/revoke action.
-         * @param inviteCode The invite code to be deleted.
-         * @param providerId The ID of the provider who accepted the invite, or null if unaccepted.
-         * @param position The position of the item in the list.
-         */
+
         void onDeleteInvite(String inviteCode, String providerId, int position);
     }
 
-    // Constructor: Now requires the OnInviteActionListener
     public ProviderInviteAdapter(List<ProviderInvite> providerList, Context context, String childId, OnInviteActionListener listener) {
         this.providerList = providerList;
         this.context = context;
@@ -60,20 +54,18 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
         // Display providerId or 'Not accepted' status
         holder.tvProviderId.setText(isAccepted ? item.getProviderId() : "Not accepted");
 
-        // --- Revoke Button Logic ---
+        // Revoke Button
         if (isAccepted) {
             // If accepted (providerId exists), disable the Revoke button
             holder.btnRevoke.setText("Revoke Blocked");
             holder.btnRevoke.setBackgroundColor(Color.parseColor("#CCCCCC")); // Greyed out color
             holder.btnRevoke.setEnabled(false); // Disable interaction
         } else {
-            // If not accepted, keep the original text and enable the button
             holder.btnRevoke.setText("Revoke");
             // Assuming your original layout has a default red color for delete/revoke
             holder.btnRevoke.setBackgroundColor(Color.parseColor("#F44336"));
             holder.btnRevoke.setEnabled(true);
         }
-        // ---------------------------------
 
         // Set listener for the Edit button (navigates to settings activity)
         holder.btnEdit.setOnClickListener(v -> {
@@ -83,7 +75,7 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
             context.startActivity(intent);
         });
 
-        // Set listener for the Revoke (Delete) button
+        // Set listener for the Revoke button
         holder.btnRevoke.setOnClickListener(v -> {
             if (listener != null) {
                 // Delegate the deletion request back to the Activity/Listener.
@@ -97,11 +89,8 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
         return providerList.size();
     }
 
-    /**
-     * ViewHolder class to hold the item views.
-     */
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvInviteCode, tvProviderId; // tvPermissionStatus REMOVED
+        TextView tvInviteCode, tvProviderId;
         Button btnEdit, btnRevoke;
 
         public ViewHolder(@NonNull View itemView) {
@@ -110,7 +99,6 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
             tvProviderId = itemView.findViewById(R.id.tvProviderEmail);
             btnEdit = itemView.findViewById(R.id.btnEdit);
 
-            // tvPermissionStatus initialization REMOVED
             btnRevoke = itemView.findViewById(R.id.btnRevoke); // Initialize the new Revoke button
         }
     }
