@@ -25,6 +25,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+
 public class ProviderMainActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
@@ -49,7 +57,7 @@ public class ProviderMainActivity extends AppCompatActivity {
     private TextView triageNotShared, triageDisplay, noTriageText;
 
     private TextView rescueTrendNotShared, rescueTrendDisplay;
-    private ChartHelper providerChartTrend;
+    private LineChart providerChartTrend;
 
     private Button buttonBack;
 
@@ -486,6 +494,12 @@ public class ProviderMainActivity extends AppCompatActivity {
 
 
     private void loadRescueTrendChart() {
+        providerChartTrend.clear();
+        providerChartTrend.getDescription().setEnabled(false);
+        providerChartTrend.getAxisRight().setEnabled(false);
+        providerChartTrend.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+        providerChartTrend.setNoDataText("");
+
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, -7);
         Date sevenDaysAgo = calendar.getTime();
@@ -501,10 +515,6 @@ public class ProviderMainActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot doc : docs) {
                         Date logDate = doc.getDate("timestamp");
                         if (logDate != null) {
-                            Calendar logCal = Calendar.getInstance();
-                            logCal.setTime(logDate);
-
-                            // Calculate how many days ago this was (0-6)
                             long diff = System.currentTimeMillis() - logDate.getTime();
                             int daysAgo = (int) (diff / (1000 * 60 * 60 * 24));
 
@@ -514,13 +524,59 @@ public class ProviderMainActivity extends AppCompatActivity {
                         }
                     }
 
-
-                    providerChartTrend.setValues(dailyCounts);
+                    updateRescueTrendChart(dailyCounts);
                     rescueTrendDisplay.setText("Rescue usage trend loaded");
                 })
                 .addOnFailureListener(e -> {
                     rescueTrendDisplay.setText("Error loading trend data");
                 });
+    }
+
+    private void updateRescueTrendChart(float[] dailyCounts) {
+        if (dailyCounts == null || dailyCounts.length == 0) {
+            providerChartTrend.clear();
+            return;
+        }
+
+        List<Entry> entries = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        long nowMs = System.currentTimeMillis();
+        long dayMs = 24L * 60L * 60L * 1000L;
+        long fromMs = nowMs - 6L * dayMs;
+
+        SimpleDateFormat labelFormat = new SimpleDateFormat("MM/dd", Locale.getDefault());
+
+        for (int i = 0; i < dailyCounts.length; i++) {
+            long dayTime = fromMs + i * dayMs;
+            Date d = new Date(dayTime);
+            entries.add(new Entry(i, dailyCounts[i]));
+            labels.add(labelFormat.format(d));
+        }
+
+        LineDataSet dataSet = new LineDataSet(entries, "Rescue uses per day");
+        dataSet.setDrawValues(false);
+        dataSet.setLineWidth(2f);
+        dataSet.setCircleRadius(3f);
+        dataSet.setDrawCircleHole(false);
+        dataSet.setMode(LineDataSet.Mode.LINEAR);
+
+        dataSet.setColor(getResources().getColor(R.color.LightPurple));
+        dataSet.setCircleColor(getResources().getColor(R.color.Purple));
+
+        LineData lineData = new LineData(dataSet);
+        providerChartTrend.setData(lineData);
+
+        XAxis xAxis = providerChartTrend.getXAxis();
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setLabelCount(Math.min(labels.size(), 7), true);
+        xAxis.setGranularity(1f);
+        xAxis.setGranularityEnabled(true);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+
+        YAxis leftAxis = providerChartTrend.getAxisLeft();
+        leftAxis.setAxisMinimum(0f);
+
+        providerChartTrend.invalidate();
     }
 
 
