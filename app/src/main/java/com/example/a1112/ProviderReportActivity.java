@@ -460,12 +460,10 @@ public class ProviderReportActivity extends AppCompatActivity {
                     }
 
                     DocumentSnapshot settingsDoc = settingsDocs.getDocuments().get(0);
-                    Boolean permissionEnabled = settingsDoc.getBoolean("permissionEnabled");
                     Boolean triageEnabled = settingsDoc.getBoolean("triageIncidents");
 
                     // only show if both permission and triage incidents are enabled
-                    if (permissionEnabled == null || !permissionEnabled ||
-                            triageEnabled == null || !triageEnabled) {
+                    if (triageEnabled == null || !triageEnabled) {
                         hideTriageIncidents();
                         return;
                     }
@@ -591,8 +589,31 @@ public class ProviderReportActivity extends AppCompatActivity {
         dataSet.setCircleColor(getResources().getColor(R.color.Purple));
         dataSet.setColor(getResources().getColor(R.color.LightPurple));
         dataSet.setLineWidth(2f);
-        dataSet.setCircleRadius(4f);
-        dataSet.setDrawCircleHole(false);
+
+        //display sample point circles differently or not at all based on number of entries for better visibility
+        if (entries.size() > 50) {
+            dataSet.setCircleRadius(2f);
+            dataSet.setDrawCircles(entries.size() <= 100);
+            dataSet.setDrawCircleHole(false);
+        } else if (entries.size() > 20) {
+            dataSet.setCircleRadius(3f);
+            dataSet.setDrawCircles(true);
+            dataSet.setDrawCircleHole(true);
+            dataSet.setCircleHoleRadius(1.5f);
+        } else {
+            dataSet.setCircleRadius(4f);
+            dataSet.setDrawCircles(true);
+            dataSet.setDrawCircleHole(true);
+            dataSet.setCircleHoleRadius(2f);
+        }
+
+        //doesnt display y value for each sample point
+        dataSet.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return "";
+            }
+        });
 
         // set line data to chart and configure basic appearance
         LineData lineData = new LineData(dataSet);
