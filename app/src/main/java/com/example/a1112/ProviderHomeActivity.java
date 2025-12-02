@@ -28,7 +28,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
     // Instance variables for UI components
 
     EditText inviteCodeEditText;
-    Button submitButton;
+    Button submitButton, buttonViewDetails;
     RecyclerView patientsRecyclerView;
     Button buttonSignOut;
 
@@ -38,8 +38,8 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
     // Stores data containing list of providers' patients
 
-    List<String> patientList;
-    String selectedPatient = null;
+    List<Child> patientList;
+    Child selectedChild = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +60,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
     void initializeViews() {
         inviteCodeEditText = findViewById(R.id.inviteCodeEditText);
         submitButton = findViewById(R.id.submitButton);
+        buttonViewDetails = findViewById(R.id.buttonViewDetails);
         patientsRecyclerView = findViewById(R.id.patientsRecyclerView);
         buttonSignOut = findViewById(R.id.buttonSignOut);
 
@@ -74,9 +75,13 @@ public class ProviderHomeActivity extends AppCompatActivity {
     void setupPatientList() {
         PatientAdapter adapter = new PatientAdapter(
                 patientList,
-                name -> {
-                    selectedPatient = name;
-                    Toast.makeText(this, "Selected: " + name, Toast.LENGTH_SHORT).show();
+                child -> {
+                    selectedChild = child;
+
+                    Toast.makeText(this, "Selected: " + child.getName(), Toast.LENGTH_SHORT).show();
+
+                    buttonViewDetails.setEnabled(true);
+                    buttonViewDetails.setText("View Details for " + child.getName());
                 });
         patientsRecyclerView.setAdapter(adapter);
     }
@@ -118,6 +123,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
                         String childId = inviteDoc.getString("childId");
                         Date createdAt = inviteDoc.getDate("createdAt");
 
+                        //make sure code isnt used, expired or provider isnt already linked to that child.
                         if (used != null && used) {
                             Toast.makeText(this, "This code has already been used", Toast.LENGTH_SHORT).show();
                             return;
@@ -125,6 +131,11 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
                         if (createdAt == null || isInviteExpired(createdAt)) {
                             Toast.makeText(this, "Invite code expired", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        if (isChildAlreadyLinked(childId)) {
+                            Toast.makeText(this, "This child is already in your patient list", Toast.LENGTH_SHORT).show();
                             return;
                         }
 
@@ -136,6 +147,16 @@ public class ProviderHomeActivity extends AppCompatActivity {
                         submitButton.setText("Submit");
                         Toast.makeText(this, "Error validating code", Toast.LENGTH_SHORT).show();
                     });
+        });
+
+        buttonViewDetails.setOnClickListener(v -> {
+            if (selectedChild != null) {
+                Intent intent = new Intent(ProviderHomeActivity.this, ProviderMainActivity.class);
+                intent.putExtra("PROVIDER_ID", getCurrentProviderId());
+                intent.putExtra("CHILD_ID", selectedChild.getId());
+                intent.putExtra("CHILD_NAME", selectedChild.getName());
+                startActivity(intent);
+            }
         });
 
         buttonSignOut.setOnClickListener(v -> {
@@ -160,10 +181,15 @@ public class ProviderHomeActivity extends AppCompatActivity {
                     patientList.clear();
 
                     for (QueryDocumentSnapshot doc : value) {
-                        String name = doc.getString("name");
-                        if (name != null) {
-                            patientList.add(name);
-                        }
+                        String childId = doc.getId();
+                        String childName = doc.getString("name");
+
+                        Child child = new Child();
+                        child.setId(childId);
+                        child.setName(childName);
+
+                        patientList.add(child);
+
                     }
 
                     if (patientsRecyclerView.getAdapter() != null) {
@@ -236,10 +262,19 @@ public class ProviderHomeActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error updating invite", Toast.LENGTH_SHORT).show());
     }
-
+    //helper to check whether 7 days in milliseconds have passed since invites creation
     private boolean isInviteExpired(Date createdAt) {
         long sevenDaysMs = 7L * 24 * 60 * 60 * 1000;
         return System.currentTimeMillis() - createdAt.getTime() > sevenDaysMs;
+    }
+    //helper that returns true iff the parameter child is already in the providers' patient list
+    private boolean isChildAlreadyLinked(String childId) {
+        for (Child child : patientList) {
+            if (child.getId().equals(childId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

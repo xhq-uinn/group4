@@ -59,10 +59,10 @@
         android:layout_marginBottom="16dp" />
 
     <Button
-        android:id="@+id/buttonSelectPatient"
+        android:id="@+id/buttonViewDetails"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Patient"
+        android:text="Select Patient to view details"
         android:enabled="false" />
 
     <LinearLayout
@@ -71,12 +71,12 @@
         android:orientation="horizontal"
         android:layout_marginTop="16dp">
 
-                <Button
-                    android:id="@+id/buttonSettings"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Settings" />
+<!--                <Button-->
+<!--                    android:id="@+id/buttonSettings"-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:text="Settings" />-->
 
         <Button
             android:id="@+id/buttonSignOut"

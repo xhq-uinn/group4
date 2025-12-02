@@ -50,5 +50,6 @@ dependencies {
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.+")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
 apply(plugin = "com.google.gms.google-services")

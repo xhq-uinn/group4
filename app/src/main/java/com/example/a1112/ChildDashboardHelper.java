@@ -2,7 +2,13 @@ package com.example.a1112;
 
 import android.graphics.Color;
 import android.widget.TextView;
-
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -150,14 +156,17 @@ public class ChildDashboardHelper {
                 .addOnFailureListener(e -> lastView.setText("N/A"));
     }
 
-    public static void loadRescueTrend(String childId, int days, ChartHelper chartView) {
+    public static void loadRescueTrend(String childId, int days, LineChart chart) {
         if (childId == null || childId.isEmpty()) {
-            chartView.setValues(new float[0]);
+            chart.clear();
             return;
         }
 
-        float[] empty = new float[days];
-        chartView.setValues(empty);
+        chart.clear();
+        chart.getDescription().setEnabled(false);
+        chart.getAxisRight().setEnabled(false);
+        chart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
+        chart.setNoDataText("");
 
         long nowMs = System.currentTimeMillis();
         long dayMs = 24L * 60L * 60L * 1000L;
@@ -187,10 +196,51 @@ public class ChildDashboardHelper {
                         counts[index] += 1f;
                     }
 
-                    chartView.setValues(counts);
+                    SimpleDateFormat labelFormat =
+                            new SimpleDateFormat("MM/dd", Locale.getDefault());
+
+                    java.util.List<Entry> entries = new java.util.ArrayList<>();
+                    java.util.List<String> labels = new java.util.ArrayList<>();
+
+                    for (int i = 0; i < days; i++) {
+                        long dayTime = fromMs + i * dayMs;
+                        Date d = new Date(dayTime);
+                        entries.add(new Entry(i, counts[i]));
+                        labels.add(labelFormat.format(d));
+                    }
+
+                    if (entries.isEmpty()) {
+                        chart.clear();
+                        return;
+                    }
+
+                    LineDataSet dataSet = new LineDataSet(entries, "Rescue uses per day"); // NEW
+                    dataSet.setDrawValues(false);
+                    dataSet.setLineWidth(2f);
+                    dataSet.setCircleRadius(3f);
+                    dataSet.setDrawCircleHole(false);
+                    dataSet.setMode(LineDataSet.Mode.LINEAR);
+
+                    dataSet.setColor(chart.getResources().getColor(R.color.LightPurple));
+                    dataSet.setCircleColor(chart.getResources().getColor(R.color.Purple));
+
+                    LineData lineData = new LineData(dataSet);
+                    chart.setData(lineData);
+
+                    XAxis xAxis = chart.getXAxis();
+                    xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+                    xAxis.setLabelCount(Math.min(days, 6), true);
+                    xAxis.setGranularity(1f);
+                    xAxis.setGranularityEnabled(true);
+                    xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+
+                    YAxis leftAxis = chart.getAxisLeft();
+                    leftAxis.setAxisMinimum(0f);
+
+                    chart.invalidate();
                 })
                 .addOnFailureListener(e -> {
-                    chartView.setValues(new float[0]);
+                    chart.clear();
                 });
     }
 

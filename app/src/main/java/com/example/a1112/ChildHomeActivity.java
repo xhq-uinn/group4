@@ -19,6 +19,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
+import com.example.a1112.MotivationCalculator;
 
 public class ChildHomeActivity extends AppCompatActivity {
 
@@ -49,7 +50,6 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button out = findViewById(R.id.out);
         Button practice = findViewById(R.id.practice);
         Button progress = findViewById(R.id.progress);
-        Button history = findViewById(R.id.history);
         Button pefButton = findViewById(R.id.PEF);
 
         db = FirebaseFirestore.getInstance();
@@ -115,23 +115,17 @@ public class ChildHomeActivity extends AppCompatActivity {
         }
         if (progress != null) {
             progress.setOnClickListener(v -> {
+
                 Intent intent = new Intent(ChildHomeActivity.this, MotivationActivity.class);
                 intent.putExtra("childId", childId);
                 startActivity(intent);
             });
         }
-        if (history != null) {
-            history.setOnClickListener(v -> {
-                Intent i = new Intent(ChildHomeActivity.this, HistoryActivity.class);
-                i.putExtra("childId", childId);
-                startActivity(i);
-            });
-        }
         if (out != null) {
             out.setOnClickListener(v -> {
-                FirebaseAuth.getInstance().signOut();
-                Intent i = new Intent(ChildHomeActivity.this, LoginActivityView.class);
-                startActivity(i);
+                Intent intent = new Intent(ChildHomeActivity.this, LoginActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
                 finish();
             });
         }
@@ -144,13 +138,18 @@ public class ChildHomeActivity extends AppCompatActivity {
         }
     }
 
+
     @Override
     protected void onResume() {
         super.onResume();
         updateZoneText();
-        new MotivationCalculator().updateAllMotivation(childId, () -> {
-            loadMotivationUI();
-        });
+        if (childId != null && !childId.isEmpty()) {
+            new MotivationCalculator().updateAllMotivation(childId, () -> {
+                runOnUiThread(() -> {
+                    // No UI update needed here
+                });
+            });
+        }
     }
 
 
@@ -173,39 +172,6 @@ public class ChildHomeActivity extends AppCompatActivity {
         }
     }
     private void loadMotivationUI() {
-
-////        TextView tvStreaks = findViewById(R.id.tvStreaks);
-////        TextView tvBadges = findViewById(R.id.tvBadges);
-//
-//        FirebaseFirestore.getInstance()
-//                .collection("children")
-//                .document(childId)
-//                .collection("motivation")
-//                .document("status")
-//                .get()
-//                .addOnSuccessListener(doc -> {
-//
-//                    if (!doc.exists()) {
-//                        tvStreaks.setText("No motivation data yet");
-//                        return;
-//                    }
-//
-//                    int c = doc.getLong("controllerStreak").intValue();
-//                    int t = doc.getLong("techniqueStreak").intValue();
-//
-//                    tvStreaks.setText(
-//                            "Controller Streak: " + c + " days\n" +
-//                                    "Technique Streak: " + t + " days"
-//                    );
-//
-//                    List<String> badges = (List<String>) doc.get("badges");
-//                    if (badges == null || badges.isEmpty()) {
-//                        tvBadges.setText("No badges yet");
-//                    } else {
-//                        StringBuilder sb = new StringBuilder("Badges:\n");
-//                        for (String b : badges) sb.append("• ").append(b).append("\n");
-//                        tvBadges.setText(sb.toString());
-//                    }
-//                });
+        // (intentionally left blank - streak UI code removed)
     }
 }

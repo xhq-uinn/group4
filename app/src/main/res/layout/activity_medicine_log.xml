@@ -15,28 +15,6 @@
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <Button
-            android:id="@+id/buttonRescueLogs"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Rescue Logs"
-            android:layout_marginEnd="8dp" />
-
-        <Button
-            android:id="@+id/buttonControllerLogs"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Controller Logs" />
-    </LinearLayout>
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -137,8 +115,48 @@
                 android:layout_weight="1"
                 android:visibility="gone"
                 android:text="Rate Last Dose" />
+
+            <Button
+                android:id="@+id/buttonAlertConfiguration"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Alert Settings"
+                android:visibility="gone"
+                android:layout_marginEnd= "8dp" />
+            <Button
+                android:id="@+id/buttonScheduleConfiguration"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Setup Schedule"
+                android:visibility="gone"
+                android:layout_marginEnd= "8dp" />
+
         </LinearLayout>
     </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/buttonRescueLogs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Rescue Logs"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/buttonControllerLogs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Controller Logs" />
+    </LinearLayout>
+
 
     <Button
         android:id="@+id/buttonFlagLow"
@@ -152,7 +170,7 @@
         android:id="@+id/logsHeaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="RECENT RESCUE/CONTROLLER LOGS"
+        android:text="RECENT RESCUE LOGS"
         android:textSize="16sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />

@@ -2,26 +2,31 @@ package com.example.a1112;
 
 import android.util.Log;
 
-import com.google.firebase.firestore.*;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MotivationCalculator {
 
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     public interface Callback {
         void onComplete();
     }
 
+    // ============================================================
+    // PUBLIC ENTRY
+    // ============================================================
     public void updateAllMotivation(String childId, Callback callback) {
 
-        //get child's parentId
-        db.collection("children").document(childId).get()
+        db.collection("children").document(childId)
+                .get()
                 .addOnSuccessListener(childDoc -> {
+
                     if (!childDoc.exists()) {
+                        Log.w("MOTIVATION", "Child does not exist");
                         callback.onComplete();
                         return;
                     }
@@ -29,28 +34,29 @@ public class MotivationCalculator {
                     String parentId = childDoc.getString("parentId");
                     if (parentId == null) parentId = "";
 
-                    // get parent motivation settings
                     loadSettings(parentId, settings ->
-                            computeMotivation(childId, settings, callback));
-
+                            loadEverything(childId, settings, callback));
                 });
     }
 
-//settings
-
+    // ============================================================
+    // SETTINGS
+    // ============================================================
     private static class Settings {
-        //default
-        int controllerStreakTarget = 7;
-        int techniqueStreakTarget = 7;
-        int techniqueHighQualityCount = 10;
-        int lowRescueThreshold = 4;
+        int controllerStreakTarget = 7;        // perfect week target
+        int techniqueStreakTarget = 7;         // if needed
+        int techniqueHighQualityCount = 10;    // high-quality threshold
+        int lowRescueThreshold = 4;            // rescue days allowed
+    }
+
+    private interface SettingsCallback {
+        void onLoaded(Settings s);
     }
 
     private void loadSettings(String parentId, SettingsCallback cb) {
+        Settings s = new Settings();
 
-        Settings s = new Settings(); // defaults
-
-        if (parentId == null || parentId.isEmpty()) {
+        if (parentId.isEmpty()) {
             cb.onLoaded(s);
             return;
         }
@@ -61,131 +67,120 @@ public class MotivationCalculator {
                 .document("config")
                 .get()
                 .addOnSuccessListener(doc -> {
+
                     if (doc.exists()) {
-
-                        Number c = (Number) doc.get("controllerStreakTarget");
-                        if (c != null) s.controllerStreakTarget = c.intValue();
-
-                        Number t = (Number) doc.get("techniqueStreakTarget");
-                        if (t != null) s.techniqueStreakTarget = t.intValue();
-
-                        Number h = (Number) doc.get("techniqueHighQualityCount");
-                        if (h != null) s.techniqueHighQualityCount = h.intValue();
-
-                        Number lr = (Number) doc.get("lowRescueThreshold");
-                        if (lr != null) s.lowRescueThreshold = lr.intValue();
+                        if (doc.getLong("controllerStreakTarget") != null)
+                            s.controllerStreakTarget = doc.getLong("controllerStreakTarget").intValue();
+                        if (doc.getLong("techniqueStreakTarget") != null)
+                            s.techniqueStreakTarget = doc.getLong("techniqueStreakTarget").intValue();
+                        if (doc.getLong("techniqueHighQualityCount") != null)
+                            s.techniqueHighQualityCount = doc.getLong("techniqueHighQualityCount").intValue();
+                        if (doc.getLong("lowRescueThreshold") != null)
+                            s.lowRescueThreshold = doc.getLong("lowRescueThreshold").intValue();
                     }
 
                     cb.onLoaded(s);
-
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("MOTIVATION", "Failed to load settings: " + e);
-                    cb.onLoaded(s); // use defaults
+                    Log.e("MOTIVATION", "Failed to load settings", e);
+                    cb.onLoaded(s);
                 });
     }
 
-    private interface SettingsCallback {
-        void onLoaded(Settings s);
-    }
-
-
-    private void computeMotivation(String childId, Settings settings, Callback callback) {
-
-        // 1.controller logs, technique sessions, rescue logs
-        AtomicInteger loaded = new AtomicInteger(0);
+    // ============================================================
+    // LOAD EVERYTHING
+    // ============================================================
+    private void loadEverything(String childId, Settings settings, Callback callback) {
 
         List<MedicineLog> controllerLogs = new ArrayList<>();
         List<MedicineLog> rescueLogs = new ArrayList<>();
-        List<TechSession> techniqueLogs = new ArrayList<>();
+        List<TechSession> techLogs = new ArrayList<>();
+        final ControllerSchedule[] scheduleHolder = new ControllerSchedule[1];
 
+        AtomicInteger loaded = new AtomicInteger(0);
         Runnable tryFinish = () -> {
-            if (loaded.incrementAndGet() == 3) {
-                finishCompute(childId, settings, controllerLogs, rescueLogs, techniqueLogs, callback);
+            if (loaded.incrementAndGet() == 4) {
+                computeAndSave(childId, settings, controllerLogs, rescueLogs, techLogs, scheduleHolder[0], callback);
             }
         };
 
-        //Load controller logs
+        // Controller logs
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
                 .whereEqualTo("type", "controller")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(q -> {
-                    for (QueryDocumentSnapshot d : q) {
-                        MedicineLog m = d.toObject(MedicineLog.class);
-                        controllerLogs.add(m);
-                    }
+                    for (QueryDocumentSnapshot d : q)
+                        controllerLogs.add(d.toObject(MedicineLog.class));
                     tryFinish.run();
                 });
 
-        //Load rescue logs
+        // Rescue logs
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
                 .whereEqualTo("type", "rescue")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(q -> {
-                    for (QueryDocumentSnapshot d : q) {
-                        MedicineLog m = d.toObject(MedicineLog.class);
-                        rescueLogs.add(m);
-                    }
+                    for (QueryDocumentSnapshot d : q)
+                        rescueLogs.add(d.toObject(MedicineLog.class));
                     tryFinish.run();
                 });
 
-        //Load technique logs
+        // Technique sessions
         db.collection("children")
                 .document(childId)
                 .collection("technique_sessions")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(q -> {
-                    for (QueryDocumentSnapshot d : q) {
-                        TechSession t = d.toObject(TechSession.class);
-                        techniqueLogs.add(t);
-                    }
+                    for (QueryDocumentSnapshot d : q)
+                        techLogs.add(d.toObject(TechSession.class));
                     tryFinish.run();
                 });
 
+        // Controller schedule
+        db.collection("controllerSchedules")
+                .document(childId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists())
+                        scheduleHolder[0] = doc.toObject(ControllerSchedule.class);
+                    tryFinish.run();
+                });
     }
 
-    // Model for technique session
-    private static class TechSession {
-        public String quality;
-        public Timestamp timestamp;
-
-        public Date getDate() {
-            return (timestamp != null) ? timestamp.toDate() : new Date(0);
-        }
-    }
-
-
-    private void finishCompute(
+    // ============================================================
+    // MAIN COMPUTATION
+    // ============================================================
+    private void computeAndSave(
             String childId,
             Settings settings,
             List<MedicineLog> controllerLogs,
             List<MedicineLog> rescueLogs,
             List<TechSession> techLogs,
+            ControllerSchedule schedule,
             Callback callback
     ) {
 
-        // Compute streaks
-        int controllerStreak = computeControllerStreak(controllerLogs);
-        int techniqueStreak = computeTechniqueStreak(techLogs);
+        Map<String, Integer> controllerMap = buildControllerDayMap(controllerLogs);
+        Map<String, Boolean> techniqueCompleted = buildTechniqueCompletedMap(techLogs);
+        Map<String, Boolean> techniqueHQ = buildTechniqueHQMap(techLogs);
 
-        // Compute badges
-        List<String> badges = computeBadges(
-                settings,
-                controllerLogs,
-                rescueLogs,
-                techLogs
-        );
+        int controllerStreak = computeControllerStreak(schedule, controllerMap);
+        int techniqueStreak = computeTechniqueStreak(schedule, techniqueCompleted);
 
-        //Write to Firestore
+        boolean perfectControllerWeek = computePerfectWeek(controllerLogs, settings);
+        int highQualityTechniqueCount = countHighQuality(techLogs);
+        boolean lowRescueMonth = checkLowRescue(settings, rescueLogs);
+
         Map<String, Object> data = new HashMap<>();
         data.put("controllerStreak", controllerStreak);
         data.put("techniqueStreak", techniqueStreak);
-        data.put("badges", badges);
+        data.put("perfectControllerWeek", perfectControllerWeek);
+        data.put("highQualityTechniqueCount", highQualityTechniqueCount);
+        data.put("lowRescueMonth", lowRescueMonth);
         data.put("lastUpdated", Timestamp.now());
 
         db.collection("children")
@@ -196,137 +191,187 @@ public class MotivationCalculator {
                 .addOnSuccessListener(v -> callback.onComplete());
     }
 
-
-    // Streak Computation
-
-    private int computeControllerStreak(List<MedicineLog> logs) {
-        return computeDailyStreak(logs, log -> true);
-    }
-
-    private int computeTechniqueStreak(List<TechSession> logs) {
-
-        // keep only High Quality
-        List<TechSession> filtered = new ArrayList<>();
-        for (TechSession t : logs) {
-            if ("High Quality".equals(t.quality)) filtered.add(t);
-        }
-
-        // convert to fake 'log' with timestamp
-        List<Date> dates = new ArrayList<>();
-        for (TechSession t : filtered) {
-            dates.add(t.getDate());
-        }
-        return computeDailyDateStreak(dates);
-    }
-
-    private int computeDailyStreak(List<MedicineLog> logs, LogFilter filter) {
-        List<Date> dates = new ArrayList<>();
-        for (MedicineLog m : logs) {
-            if (filter.ok(m)) dates.add(m.getTimestamp());
-        }
-        return computeDailyDateStreak(dates);
-    }
-
-    private interface LogFilter {
-        boolean ok(MedicineLog m);
-    }
-
-    private int computeDailyDateStreak(List<Date> dates) {
-        if (dates.isEmpty()) return 0;
-
-        // Normalize today
-        Calendar today = Calendar.getInstance();
-        today.set(Calendar.HOUR_OF_DAY, 0);
-        today.set(Calendar.MINUTE, 0);
-        today.set(Calendar.SECOND, 0);
-        today.set(Calendar.MILLISECOND, 0);
-        long todayMillis = today.getTimeInMillis();
-
-        // Collect unique days, ignoring future dates
-        Set<String> uniqueDays = new HashSet<>();
+    // ============================================================
+    // NORMALIZATION HELPERS
+    // ============================================================
+    private Map<String, Integer> buildControllerDayMap(List<MedicineLog> logs) {
+        Map<String, Integer> map = new HashMap<>();
         Calendar c = Calendar.getInstance();
 
-        for (Date d : dates) {
-            if (d.getTime() > todayMillis) {
-                //ignore future logs caused by serverTimestamp delay
-                continue;
-            }
-            c.setTime(d);
-            uniqueDays.add(c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR));
+        for (MedicineLog m : logs) {
+            c.setTime(m.getTimestamp());
+            String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
+            map.put(key, map.getOrDefault(key, 0) + m.getDoseCount());
         }
+        return map;
+    }
+
+    private Map<String, Boolean> buildTechniqueCompletedMap(List<TechSession> logs) {
+        Map<String, Boolean> map = new HashMap<>();
+        Calendar c = Calendar.getInstance();
+
+        for (TechSession t : logs) {
+            if (!t.completed) continue;
+            c.setTime(t.getDate());
+            String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
+            map.put(key, true);
+        }
+        return map;
+    }
+
+    private Map<String, Boolean> buildTechniqueHQMap(List<TechSession> logs) {
+        Map<String, Boolean> map = new HashMap<>();
+        Calendar c = Calendar.getInstance();
+
+        for (TechSession t : logs) {
+            if (!"high-quality".equalsIgnoreCase(t.quality)) continue;
+            c.setTime(t.getDate());
+            String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
+            map.put(key, true);
+        }
+        return map;
+    }
+
+    // ============================================================
+    // STREAK CALCULATION (FINAL RULE)
+    // ============================================================
+    private int computeControllerStreak(ControllerSchedule schedule, Map<String, Integer> controllerMap) {
+        if (schedule == null) return 0;
 
         int streak = 0;
-        Calendar cursor = Calendar.getInstance();
 
-        // Now count streak backward from today
+        Calendar cursor = Calendar.getInstance();
+        cursor.set(Calendar.HOUR_OF_DAY, 0);
+        cursor.set(Calendar.MINUTE, 0);
+        cursor.set(Calendar.SECOND, 0);
+        cursor.set(Calendar.MILLISECOND, 0);
+
         while (true) {
+            int dow = cursor.get(Calendar.DAY_OF_WEEK);
+            int planned = schedule.getDoseForDay(dow);
+
             String key = cursor.get(Calendar.YEAR) + "-" + cursor.get(Calendar.DAY_OF_YEAR);
-            if (uniqueDays.contains(key)) {
-                streak++;
-                cursor.add(Calendar.DATE, -1);
+            int actual = controllerMap.getOrDefault(key, 0);
+
+            if (planned == 0) {
+                if (actual == 0) {
+                    streak++; // success
+                } else break; // failed zero-day
             } else {
-                break;
+                if (actual == planned) {
+                    streak++;
+                } else break;
             }
+
+            cursor.add(Calendar.DAY_OF_YEAR, -1);
         }
 
         return streak;
     }
 
-    // Badge Computation
+    private int computeTechniqueStreak(ControllerSchedule schedule, Map<String, Boolean> techniqueComplete) {
+        if (schedule == null) return 0;
 
-    private List<String> computeBadges(
-            Settings settings,
-            List<MedicineLog> controllerLogs,
-            List<MedicineLog> rescueLogs,
-            List<TechSession> techLogs
-    ) {
+        int streak = 0;
 
-        List<String> badges = new ArrayList<>();
+        Calendar cursor = Calendar.getInstance();
+        cursor.set(Calendar.HOUR_OF_DAY, 0);
+        cursor.set(Calendar.MINUTE, 0);
+        cursor.set(Calendar.SECOND, 0);
+        cursor.set(Calendar.MILLISECOND, 0);
 
-        // 1. Perfect controller week (7 days)
-        if (computeControllerStreak(controllerLogs) >= settings.controllerStreakTarget) {
-            badges.add("PERFECT_CONTROLLER_WEEK");
+        while (true) {
+            int dow = cursor.get(Calendar.DAY_OF_WEEK);
+            int planned = schedule.getDoseForDay(dow);
+
+            if (planned == 0) {
+                cursor.add(Calendar.DAY_OF_YEAR, -1);
+                continue;
+            }
+
+            String key = cursor.get(Calendar.YEAR) + "-" + cursor.get(Calendar.DAY_OF_YEAR);
+
+            if (!techniqueComplete.getOrDefault(key, false))
+                break;
+
+            streak++;
+            cursor.add(Calendar.DAY_OF_YEAR, -1);
         }
 
-        // 2. 10 high quality technique sessions
-        int hq = 0;
-        for (TechSession t : techLogs) {
-            if ("High Quality".equals(t.quality)) hq++;
-        }
-        if (hq >= settings.techniqueHighQualityCount) {
-            badges.add("TEN_HIGH_QUALITY_TECHNIQUE");
-        }
+        return streak;
+    }
 
-        // 3. Low rescue month (<= threshold in 30 days)
-        // Low-rescue month: count rescue "days", not rescue "doses"
-        Set<String> rescueDays = new HashSet<>();
-
-        Date now = new Date();
-        long THIRTY = 30L * 24 * 60 * 60 * 1000;
-
+    // ============================================================
+    // BADGE CONDITIONS
+    // ============================================================
+    private boolean computePerfectWeek(List<MedicineLog> logs, Settings s) {
+        // Build day-completed map
+        Set<String> completedDays = new HashSet<>();
         Calendar c = Calendar.getInstance();
 
+        for (MedicineLog m : logs) {
+            c.setTime(m.getTimestamp());
+            String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
+            completedDays.add(key);
+        }
+
+        int count = 0;
+
+        Calendar cur = Calendar.getInstance();
+        cur.set(Calendar.HOUR_OF_DAY, 0);
+        cur.set(Calendar.MINUTE, 0);
+        cur.set(Calendar.SECOND, 0);
+        cur.set(Calendar.MILLISECOND, 0);
+
+        while (true) {
+            String key = cur.get(Calendar.YEAR) + "-" + cur.get(Calendar.DAY_OF_YEAR);
+            if (completedDays.contains(key)) {
+                count++;
+                cur.add(Calendar.DAY_OF_YEAR, -1);
+            } else break;
+        }
+
+        return count >= s.controllerStreakTarget;
+    }
+
+    private int countHighQuality(List<TechSession> techLogs) {
+        int cnt = 0;
+        for (TechSession t : techLogs) {
+            if ("high-quality".equalsIgnoreCase(t.quality)) cnt++;
+        }
+        return cnt;
+    }
+
+    private boolean checkLowRescue(Settings s, List<MedicineLog> rescueLogs) {
+        Calendar c = Calendar.getInstance();
+        long now = System.currentTimeMillis();
+        long THIRTY = 30L * 24 * 60 * 60 * 1000;
+
+        Set<String> rescueDays = new HashSet<>();
+
         for (MedicineLog m : rescueLogs) {
-            Date d = m.getTimestamp();
-
-            // skip future timestamps (possible clock mismatch)
-            if (d.getTime() > now.getTime()) continue;
-
-            // only count last 30 days
-            if (now.getTime() - d.getTime() <= THIRTY) {
-                c.setTime(d);
+            long t = m.getTimestamp().getTime();
+            if (now - t <= THIRTY) {
+                c.setTime(m.getTimestamp());
                 String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
-                rescueDays.add(key);  // ensure 1 day = 1 count
+                rescueDays.add(key);
             }
         }
 
-        int rescueDayCount = rescueDays.size();
-
-        if (rescueDayCount <= settings.lowRescueThreshold) {
-            badges.add("LOW_RESCUE_MONTH");
-        }
-
-        return badges;
+        return rescueDays.size() <= s.lowRescueThreshold;
     }
 
+
+    // ============================================================
+    // MODELS
+    // ============================================================
+    private static class TechSession {
+        public String quality;
+        public boolean completed;
+        public Timestamp timestamp;
+
+        public Date getDate() {
+            return timestamp != null ? timestamp.toDate() : new Date(0);
+        }
+    }
 }

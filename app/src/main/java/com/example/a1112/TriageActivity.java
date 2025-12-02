@@ -44,7 +44,7 @@ public class TriageActivity extends AppCompatActivity {
     private int lastPef = -1;
 
 
-    private String redActionPlan = "Call Emergency Now.\n"
+    private String redActionPlan = "You are in the RED zone.\n"
             + "- Follow your RED zone steps from the action plan.\n"
             + "- Use your rescue inhaler.\n"
             + "- Contact your parent or doctor right away.\n";
@@ -253,7 +253,7 @@ public class TriageActivity extends AppCompatActivity {
 
             decision.append("⚠️ Red flag symptoms detected.\n\n")
                     .append("CALL EMERGENCY NOW.\n\n")
-                    .append(redActionPlan)  // 使用父母配置的 red action plan（或默认）
+                    .append(redActionPlan)
                     .append("\n\nSafety note: This is guidance, not a diagnosis. ")
                     .append("If you feel very scared or get worse, call emergency.");
 

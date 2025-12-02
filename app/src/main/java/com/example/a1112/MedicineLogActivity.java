@@ -2,7 +2,9 @@ package com.example.a1112;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -10,8 +12,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,6 +24,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,8 @@ public class MedicineLogActivity extends AppCompatActivity {
 
     // UI components
     private TextView childNameText, logsHeaderText, noLogsText, unitTypeTitle;
-    private Button buttonRescueLogs, buttonControllerLogs, buttonSubmitLog, buttonRateLastDose, buttonFlagLow, buttonHome;
+    private Button buttonRescueLogs, buttonControllerLogs, buttonSubmitLog, buttonRateLastDose, buttonFlagLow, buttonHome, buttonAlertConfiguration, buttonScheduleConfiguration;
+
     private Spinner medicineSpinner, medicineTypeSpinner, unitTypeSpinner;
     private EditText customMedicineInput, doseCountInput;
     private RecyclerView logsRecyclerView;
@@ -49,6 +51,9 @@ public class MedicineLogActivity extends AppCompatActivity {
     private MedicineLogAdapter adapter;
 
     private boolean fromInventory = false; // to distinguish custom medicine or selected from inventory
+
+    private int maxRapidRescues = 3;    // default: 3 uses
+    private int rapidRescuesTimeframe = 3;        // default: 3 hours
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +71,7 @@ public class MedicineLogActivity extends AppCompatActivity {
         initializeViews();
         setupHiddenInputFields();
         setupClickListeners();
+        loadRapidRescueSettings();
         loadMedicines();
         loadLogs(currentViewType);
     }
@@ -79,6 +85,8 @@ public class MedicineLogActivity extends AppCompatActivity {
         buttonSubmitLog = findViewById(R.id.buttonSubmitLog);
         buttonRateLastDose = findViewById(R.id.buttonRateLastDose);
         buttonFlagLow = findViewById(R.id.buttonFlagLow);
+        buttonAlertConfiguration = findViewById(R.id.buttonAlertConfiguration);
+        buttonScheduleConfiguration = findViewById(R.id.buttonScheduleConfiguration);
         buttonHome = findViewById(R.id.buttonHome);
         medicineTypeSpinner = findViewById(R.id.medicineTypeSpinner);
         medicineSpinner = findViewById(R.id.medicineSpinner);
@@ -92,10 +100,16 @@ public class MedicineLogActivity extends AppCompatActivity {
             childNameText.setText(currentChildName + "'s Medicine Log");
         }
 
-        // only show flag low and pre/post check for child users
+
+        // only show flag low and pre/post check for child users and
         if ("child".equals(userType)) {
             buttonFlagLow.setVisibility(View.VISIBLE);
             buttonRateLastDose.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            buttonAlertConfiguration.setVisibility(View.VISIBLE);
+            buttonScheduleConfiguration.setVisibility(View.VISIBLE);
         }
 
         logsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -148,6 +162,16 @@ public class MedicineLogActivity extends AppCompatActivity {
         buttonRateLastDose.setOnClickListener(v -> rateLastDose());
 
         buttonFlagLow.setOnClickListener(v -> showFlagLowDialog());
+
+        buttonAlertConfiguration.setOnClickListener(v -> showRapidRescueSettings());
+
+        buttonScheduleConfiguration.setOnClickListener(v -> {
+            Intent intent = new Intent(MedicineLogActivity.this, ScheduleConfigurationActivity.class);
+            intent.putExtra("CHILD_ID", currentChildId);
+            intent.putExtra("CHILD_NAME", currentChildName);
+            intent.putExtra("USER_TYPE", userType);
+            startActivity(intent);
+        });
 
         buttonHome.setOnClickListener(v -> {
             Intent intent;
@@ -284,10 +308,16 @@ public class MedicineLogActivity extends AppCompatActivity {
 
         //make sure doseStr is a number and convert it to int
         int doseCount;
+
         try {
             doseCount = Integer.parseInt(doseStr);
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Invalid dose count", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (doseCount <= 0) {
+            Toast.makeText(this, "Please enter dose count greater than 0", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -318,9 +348,23 @@ public class MedicineLogActivity extends AppCompatActivity {
                     medicineTypeSpinner.setSelection(0);
                     medicineSpinner.setSelection(0);
 
+                    //if child logged a controller dose, go to technique helper
+                    if ("controller".equals(type) && "child".equals(userType)) {
+                        Intent intent = new Intent(MedicineLogActivity.this, TechniqueHelperActivity.class);
+                        intent.putExtra("childId", currentChildId);
+                        intent.putExtra("childName", currentChildName);
+                        startActivity(intent);
+                    }
+
                     // reload the logs to show the updated logs if the user is viewing the same log type
                     if (type.equals(currentViewType)) {
                         loadLogs(currentViewType);
+                    }
+
+                    //whenever a rescue use is logged check if we pass threshold of
+                    // x uses within x hours for an alert to parent
+                    if ("rescue".equals(type)) {
+                        checkForRapidRescuesAlert(currentChildId);
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -330,10 +374,6 @@ public class MedicineLogActivity extends AppCompatActivity {
 
     // rating of last dose (pre/post check)
     private void rateLastDose() {
-        if (logs.isEmpty()) {
-            Toast.makeText(this, "No doses to rate yet", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // get most recent log
         db.collection("medicineLogs")
@@ -492,28 +532,133 @@ public class MedicineLogActivity extends AppCompatActivity {
                 });
     }
 
-    // updates the display of logs
-    private void updateLogsDisplay() {
+    //dialog where parent can configure rapid rescue alert settings
+    private void showRapidRescueSettings() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Rapid Rescue Alert Settings");
 
-        if (logs.isEmpty()) {
-            noLogsText.setVisibility(View.VISIBLE);
-            logsRecyclerView.setVisibility(View.GONE);
-        } else {
-            noLogsText.setVisibility(View.GONE);
-            logsRecyclerView.setVisibility(View.VISIBLE);
-        }
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(40, 40, 40, 40);
 
-        adapter.updateLogs(logs);
+        //get the number of uses within how long input
+        TextView thresholdLabel = new TextView(this);
+        thresholdLabel.setText("How many rescue uses to Alert?");
+        layout.addView(thresholdLabel);
+
+        EditText thresholdInput = new EditText(this);
+        thresholdInput.setHint("3");
+        thresholdInput.setInputType(InputType.TYPE_CLASS_NUMBER);
+        thresholdInput.setText(String.valueOf(maxRapidRescues));
+        layout.addView(thresholdInput);
+
+        TextView hoursLabel = new TextView(this);
+        hoursLabel.setText("Within how many hours of each other?");
+        hoursLabel.setPadding(0, 20, 0, 0);
+        layout.addView(hoursLabel);
+
+        EditText hoursInput = new EditText(this);
+        hoursInput.setHint("3");
+        hoursInput.setInputType(InputType.TYPE_CLASS_NUMBER);
+        hoursInput.setText(String.valueOf(rapidRescuesTimeframe));
+        layout.addView(hoursInput);
+
+
+
+        builder.setView(layout);
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String thresholdText = thresholdInput.getText().toString().trim();
+            String hoursText = hoursInput.getText().toString().trim();
+
+            // Check for empty inputs
+            if (thresholdText.isEmpty() || hoursText.isEmpty()) {
+                Toast.makeText(this, "Please fill in both fields", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            try {
+                int thresholdInputValue = Integer.parseInt(thresholdInput.getText().toString().trim());
+                int hoursInputValue = Integer.parseInt(hoursInput.getText().toString().trim());
+
+                if (thresholdInputValue <= 0 || hoursInputValue <= 0 ) {
+                    Toast.makeText(this, "Number of rescues and hours must be greater than 0", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                //store shared preferences if no error
+                maxRapidRescues = thresholdInputValue;
+                rapidRescuesTimeframe = hoursInputValue;
+
+                SharedPreferences prefs = getSharedPreferences("medicine_settings", MODE_PRIVATE);
+                prefs.edit()
+                        .putInt("rapid_rescue_threshold", maxRapidRescues)
+                        .putInt("rapid_rescue_hours", rapidRescuesTimeframe)
+                        .apply();
+
+                Toast.makeText(this, "Rapid rescue configuration saved!", Toast.LENGTH_SHORT).show();
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Please enter valid numbers", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
-    //helper to create spinner(selector) given a list of choices we defined in arrays.xml
-    private Spinner createSpinner(int arrayResourceId) {
-        Spinner spinner = new Spinner(this);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                this, arrayResourceId, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        return spinner;
+    //load stored shared prefences for rapidRescue alerts default to 3 if no settings saved
+    private void loadRapidRescueSettings() {
+        SharedPreferences prefs = getSharedPreferences("medicine_settings", MODE_PRIVATE);
+        maxRapidRescues = prefs.getInt("rapid_rescue_threshold", 3);
+        rapidRescuesTimeframe = prefs.getInt("rapid_rescue_hours", 3);
+    }
+
+
+
+    //finds all logs within the configured number of hours and checks
+    // if the amount is equal or surpasses the max amount of rescue uses configured
+    private void checkForRapidRescuesAlert(String childId) {
+
+        // set the date back by the configured number of hours to check for rescue uses
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR_OF_DAY, -rapidRescuesTimeframe);
+        Date configuredHoursBefore = calendar.getTime();
+
+        //get all rescue logs past that number of hours before and get and check if number of returned instances is >=
+        //than configured allowed rescue uses and if so send alert
+        db.collection("medicineLogs")
+                .whereEqualTo("childId", childId)
+                .whereEqualTo("type", "rescue")
+                .whereGreaterThanOrEqualTo("timestamp", configuredHoursBefore)
+                .get()
+                .addOnSuccessListener(result -> {
+                    int rescueCount = result.size();
+                    if (rescueCount >= maxRapidRescues) {
+                        sendRapidRescueAlert(rescueCount);
+                    }
+                });
+    }
+
+
+    private void sendRapidRescueAlert(int rescueCount) {
+
+
+        //find the parent of the child and add a alert instance to the database with all details
+        db.collection("children").document(currentChildId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String parentId = documentSnapshot.getString("parentId");
+                        Log.d("RapidRescue", "Parent ID: " + parentId);
+
+                        Map<String, Object> alertInfo = new HashMap<>();
+                        alertInfo.put("parentId", parentId);
+                        alertInfo.put("childId", currentChildId);
+                        alertInfo.put("type", "rapid_rescue");
+                        alertInfo.put("details", currentChildName + " has logged " + rescueCount + " rescue uses in " + rapidRescuesTimeframe + " hours!");
+                        alertInfo.put("timestamp", new Date());
+
+                        db.collection("alerts").add(alertInfo);
+                    }
+                });
     }
 
 
@@ -556,6 +701,31 @@ public class MedicineLogActivity extends AppCompatActivity {
                         db.collection("alerts").add(alertInfo);
                     }
                 });
+    }
+
+
+    // updates the display of logs
+    private void updateLogsDisplay() {
+
+        if (logs.isEmpty()) {
+            noLogsText.setVisibility(View.VISIBLE);
+            logsRecyclerView.setVisibility(View.GONE);
+        } else {
+            noLogsText.setVisibility(View.GONE);
+            logsRecyclerView.setVisibility(View.VISIBLE);
+        }
+
+        adapter.updateLogs(logs);
+    }
+
+    //helper to create spinner(selector) given a list of choices we defined in arrays.xml
+    private Spinner createSpinner(int arrayResourceId) {
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this, arrayResourceId, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        return spinner;
     }
 
 }

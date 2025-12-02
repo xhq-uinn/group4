@@ -19,7 +19,7 @@ import android.graphics.Color;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.DocumentSnapshot;
-
+import com.github.mikephil.charting.charts.LineChart;
 
 public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHolder> {
 
@@ -83,7 +83,44 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             v.getContext().startActivity(intent);
         });
 
-        holder.childHomeBtn.setOnClickListener(v -> listener.onOpenChildHome(child));
+//        holder.childHomeBtn.setOnClickListener(v -> listener.onOpenChildHome(child));
+        holder.childHomeBtn.setOnClickListener(v -> {
+
+            FirebaseFirestore.getInstance()
+                    .collection("children")
+                    .document(child.getId())
+                    .get()
+                    .addOnSuccessListener(doc -> {
+
+                        boolean completed = false;
+
+                        if (doc.exists() && doc.getBoolean("hasCompletedOnboarding") != null) {
+                            completed = doc.getBoolean("hasCompletedOnboarding");
+                        }
+
+                        if (!completed) {
+                            //not completed Onboarding -> OnboardingActivity
+                            Intent intent = new Intent(v.getContext(), OnboardingActivity.class);
+                            intent.putExtra("childId", child.getId());
+                            v.getContext().startActivity(intent);
+                        } else {
+                            //completed -> Child Home
+                            listener.onOpenChildHome(child);
+                        }
+
+                    })
+                    .addOnFailureListener(e -> {
+                        //allow enter when firebase fail
+                        listener.onOpenChildHome(child);
+                    });
+        });
+
+        holder.historyBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), HistoryActivity.class);
+            intent.putExtra("childId", child.getId());
+            v.getContext().startActivity(intent);
+        });
+
     }
 
     @Override
@@ -94,13 +131,13 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
     static class ChildViewHolder extends RecyclerView.ViewHolder {
         TextView nameText, ageText;
         Button editBtn, deleteBtn, shareBtn, dailyCheckInBtn;
-        Button childHomeBtn;
+        Button childHomeBtn, historyBtn;
         TextView todayZoneText;
         TextView weekRescueText;
         TextView lastRescueText;
 
         // Trend chart
-        ChartHelper chartTrend;
+        LineChart chartTrend;
         RadioGroup trendRangeGroup;
         RadioButton rbTrend7d;
         RadioButton rbTrend30d;
@@ -115,6 +152,7 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             shareBtn = itemView.findViewById(R.id.btn_share_settings);
             dailyCheckInBtn = itemView.findViewById(R.id.btn_daily_check_in);
             childHomeBtn = itemView.findViewById(R.id.btn_child_home);
+            historyBtn = itemView.findViewById(R.id.btn_history);
 
             todayZoneText = itemView.findViewById(R.id.text_today_zone_value);
             weekRescueText = itemView.findViewById(R.id.text_week_rescue_value);

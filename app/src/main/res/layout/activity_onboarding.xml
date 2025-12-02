@@ -30,14 +30,15 @@
             android:text="What is Smart Air?"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:textColor="#3F51B5"
             android:layout_marginBottom="8dp" />
 
         <TextView
             android:id="@+id/purposeText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Smart Air helps children understand asthma, learn correct inhaler techniques, and record symptoms and medication use in a fun, easy way."
+            android:text="SMART AIR is a kid-friendly Android app that helps children (ages 6–16) understand
+asthma, practice good inhaler technique, log symptoms/medicine use, and share
+parent-approved information with a healthcare provider via a concise, exportable report."
             android:textSize="16sp"
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="20dp" />
@@ -50,14 +51,13 @@
             android:text="Rescue vs Controller"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:textColor="#3F51B5"
             android:layout_marginBottom="8dp" />
 
         <TextView
             android:id="@+id/rescueText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Rescue inhalers provide quick relief when symptoms appear, while controller inhalers are taken daily to prevent attacks."
+            android:text="Rescue inhalers are quick-relief medicine for sudden symptoms, while controller medicine are daily prevention medicine that reduces airway swelling."
             android:textSize="16sp"
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="20dp" />
@@ -70,7 +70,6 @@
             android:text="Privacy and Sharing"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:textColor="#3F51B5"
             android:layout_marginBottom="8dp" />
 
         <TextView
@@ -88,7 +87,6 @@
             android:id="@+id/finishButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="#3F51B5"
             android:text="Continue to Home"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"

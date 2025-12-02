@@ -10,15 +10,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class PatientAdapter extends RecyclerView.Adapter<PatientAdapter.PatientViewHolder> {
-    private List<String> patientList;
+    private List<Child> patientList;
     private OnPatientClickListener listener;
 
 
     public interface OnPatientClickListener {
-        void onPatientClick(String patientName);
+        void onPatientClick(Child child);
     }
 
-    public PatientAdapter(List<String> patientList, OnPatientClickListener listener) {
+    public PatientAdapter(List<Child> patientList, OnPatientClickListener listener) {
         this.patientList = patientList;
         this.listener = listener;
     }
@@ -34,15 +34,15 @@ public class PatientAdapter extends RecyclerView.Adapter<PatientAdapter.PatientV
 
     @Override
     public void onBindViewHolder(@NonNull PatientViewHolder holder, int position) {
-        String patientName = patientList.get(position);
+        Child child = patientList.get(position);
 
-        holder.patientNameText.setText(patientName);
+        holder.patientNameText.setText(child.getName());
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (listener != null) {
-                    listener.onPatientClick(patientName);
+                    listener.onPatientClick(child);
                 }
             }
         });

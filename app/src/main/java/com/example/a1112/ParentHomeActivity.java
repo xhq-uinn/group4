@@ -37,11 +37,12 @@ public class ParentHomeActivity extends AppCompatActivity {
     // UI
     private Button buttonAddChild;
     //    private Button buttonLinkChild;
-    private Button buttonInviteProvider;
+    //    private Button buttonInviteProvider;
     private RecyclerView childrenRecyclerView;
     private Button buttonSignOut;
     private Button buttonInventory;
     private Button buttonMedicineLog;
+    private Button buttonGenerateReport;
 
 
     // Firebase
@@ -71,6 +72,7 @@ public class ParentHomeActivity extends AppCompatActivity {
         buttonSignOut = findViewById(R.id.btn_signout);
         buttonInventory = findViewById(R.id.buttonInventory);
         buttonMedicineLog = findViewById(R.id.buttonMedicineLog);
+        buttonGenerateReport = findViewById(R.id.buttonGenerateReport);
 
 
         // Recycler setup
@@ -130,6 +132,8 @@ public class ParentHomeActivity extends AppCompatActivity {
 
             finish();
         });
+
+        buttonGenerateReport.setOnClickListener(v -> showChildSelectionForReportDialog());
 
         buttonInventory.setOnClickListener(v -> {
             showChildSelectionForInventoryDialog();
@@ -323,7 +327,7 @@ public class ParentHomeActivity extends AppCompatActivity {
             if (!newName.isEmpty() && !newAgeStr.isEmpty()) {
                 updateChild(child.getId(), newName, newAgeStr, newNote, newPbStr, redActionStr, yellowActionStr, greenActionStr);//changed here
             } else {
-                Toast.makeText(this, "Name and DOB required", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Name and age required", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -633,7 +637,27 @@ public class ParentHomeActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void showChildSelectionForReportDialog() {
+        String[] childNames = new String[childList.size()];
+        for (int i = 0; i < childList.size(); i++) {
+            childNames[i] = childList.get(i).getName();
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Select a Child for Report")
+                .setItems(childNames, (dialog, which) -> {
+                    Child selectedChild = childList.get(which);
+
+                    Intent intent = new Intent(ParentHomeActivity.this, ProviderReportActivity.class);
+                    intent.putExtra("CHILD_ID", selectedChild.getId());
+                    intent.putExtra("CHILD_NAME", selectedChild.getName());
+                    startActivity(intent);
+                })
+                .show();
+    }
 }
+
+
 
 
 
