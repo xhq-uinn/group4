@@ -190,7 +190,7 @@ Provides at-a-glance status for parents and a provider-ready summary.
 - Parent may have multiple children, but each child can only have 1 parent
 - Invite code cannot be revoked after provider accepts invitation
 - PEF and PB are manually entered
-- Internet required
+- Motivation streaks: a streak day counts when the user takes exactly the planned amount of controller medication for that day.
 
 ---
 
