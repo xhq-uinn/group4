@@ -161,7 +161,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
 
         buttonSignOut.setOnClickListener(v -> {
             mAuth.signOut();
-            Intent intent = new Intent(ProviderHomeActivity.this, LoginActivity.class);
+            Intent intent = new Intent(ProviderHomeActivity.this, LoginActivityView.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();

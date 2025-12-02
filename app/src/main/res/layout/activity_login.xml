@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- ===== Adult Login Section ===== -->
+        <!-- Adult Login-->
         <TextView
             android:text="Parent / Provider Login"
             android:textSize="20sp"
@@ -34,7 +34,7 @@
             android:layout_marginBottom="24dp"/>
 
 
-        <!-- ===== Child Login Section ===== -->
+        <!--Child Login -->
 
         <TextView
             android:text="Child Login"
@@ -59,7 +59,7 @@
             android:layout_marginBottom="24dp"/>
 
 
-        <!-- ===== Buttons ===== -->
+        <!--Buttons-->
 
         <Button
             android:id="@+id/loginButton"

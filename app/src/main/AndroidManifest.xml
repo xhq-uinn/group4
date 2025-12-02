@@ -11,6 +11,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme._1112">
+
+<!--        <activity android:name=".LoginActivityView" />-->
+
         <activity android:name=".ParentMotivationSettingsActivity" />
         <activity
             android:name=".ProviderListActivity"
@@ -58,7 +61,7 @@
             android:name=".SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".LoginActivityView"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -92,7 +92,7 @@ public class TriageActivity extends AppCompatActivity {
             Toast.makeText(this,
                     "Not signed in. Returning to login.",
                     Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(TriageActivity.this, LoginActivity.class));
+            startActivity(new Intent(TriageActivity.this, LoginActivityView.class));
             finish();
             return;
         }

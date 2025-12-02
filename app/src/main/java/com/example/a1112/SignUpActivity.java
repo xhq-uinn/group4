@@ -1,11 +1,13 @@
 package com.example.a1112;
-import android.view.View;
-import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
+import android.view.View;
 import android.widget.*;
 import android.content.Intent;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.*;
@@ -15,7 +17,10 @@ public class SignUpActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
-    private EditText emailField, passwordField, childNameField, childAgeField;
+    private EditText emailField, passwordField;
+    private EditText childNameField, childAgeField;
+    private EditText childUsernameField, childPasswordField;   // <-- NEW
+
     private RadioGroup roleGroup;
     private LinearLayout childFields;
     private Button registerButton;
@@ -32,11 +37,15 @@ public class SignUpActivity extends AppCompatActivity {
         passwordField = findViewById(R.id.passwordField);
         childNameField = findViewById(R.id.childNameField);
         childAgeField = findViewById(R.id.childAgeField);
+
+        childUsernameField = findViewById(R.id.childUsernameField);  // <-- NEW
+        childPasswordField = findViewById(R.id.childPasswordField);  // <-- NEW
+
         roleGroup = findViewById(R.id.roleGroup);
         childFields = findViewById(R.id.childFields);
+
         registerButton = findViewById(R.id.registerButton);
 
-        // Only Parent & Child sees child name/age fields
         roleGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.roleParent || checkedId == R.id.roleChild) {
                 childFields.setVisibility(View.VISIBLE);
@@ -49,67 +58,128 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
+
         String email = emailField.getText().toString().trim().toLowerCase();
         String password = passwordField.getText().toString().trim();
+
         String childName = childNameField.getText().toString().trim();
         String childAge = childAgeField.getText().toString().trim();
 
-        int selectedRoleId = roleGroup.getCheckedRadioButtonId();
-        if (selectedRoleId == -1) {
-            Toast.makeText(this, "select a role needed", Toast.LENGTH_SHORT).show();
+        String childUsername = childUsernameField.getText().toString().trim();
+        String childPassword = childPasswordField.getText().toString().trim();
+
+        int roleId = roleGroup.getCheckedRadioButtonId();
+        if (roleId == -1) {
+            Toast.makeText(this, "Select a role", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String role = ((RadioButton) findViewById(selectedRoleId)).getText().toString();
+        String role = ((RadioButton) findViewById(roleId)).getText().toString();
 
+        // If Parent / Child → child info is needed
         if ((role.equals("Parent") || role.equals("Child")) &&
                 (childName.isEmpty() || childAge.isEmpty())) {
-            Toast.makeText(this, "child name and age needed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Child name and age required", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // Handle username/password rules only for Parent signup
+        boolean bothEmpty = childUsername.isEmpty() && childPassword.isEmpty();
+        boolean bothFilled = !childUsername.isEmpty() && !childPassword.isEmpty();
+
+        if (role.equals("Parent")) {
+            if (!bothEmpty && !bothFilled) {
+                Toast.makeText(this,
+                        "Child username and password must BOTH be empty or BOTH be filled",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
+        // Step 1: Create FirebaseAuth user
         auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Sign up fail", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                .addOnSuccessListener(task -> {
 
-                    FirebaseUser user = auth.getCurrentUser();
-                    if (user == null) return;
+                    String uid = auth.getCurrentUser().getUid();
 
-                    String uid = user.getUid();
-
-                    // Add base user data
-                    Map<String, Object> userInfo = new HashMap<>();
-                    userInfo.put("email", email);
-                    userInfo.put("role", role);
-                    userInfo.put("hasCompletedOnboarding", false);
-                    userInfo.put("linkedChildren", new ArrayList<>());
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("email", email);
+                    userData.put("role", role);
+                    userData.put("hasCompletedOnboarding", false);
+                    userData.put("linkedChildren", new ArrayList<>());
 
                     db.collection("users").document(uid)
-                            .set(userInfo)
-                            .addOnSuccessListener(aVoid -> {
+                            .set(userData)
+                            .addOnSuccessListener(ignored -> {
+
                                 switch (role) {
-                                    case "Parent":
-                                        addChildFromParent(uid, childName, childAge);
+                                    case "Provider":
+                                        goLogin();
                                         break;
 
                                     case "Child":
-                                        addChildSelfSignup(uid, childName, childAge);
+                                        createSelfChild(uid, childName, childAge, childUsername, childPassword);
                                         break;
 
-                                    case "Provider":
-                                        startActivity(new Intent(this, LoginActivity.class));
-                                        finish();
+                                    case "Parent":
+                                        if (bothFilled) {
+                                            checkUsernameAndCreateChild(uid, childName, childAge,
+                                                    childUsername, childPassword);
+                                        } else {
+                                            // No child login, but still create child
+                                            createChildWithoutLogin(uid, childName, childAge);
+                                        }
                                         break;
                                 }
                             });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Signup failed", Toast.LENGTH_SHORT).show());
+    }
+
+    private void checkUsernameAndCreateChild(
+            String parentUid, String name, String age,
+            String username, String password) {
+
+        db.collection("children")
+                .whereEqualTo("username", username)
+                .get()
+                .addOnSuccessListener(snap -> {
+
+                    if (!snap.isEmpty()) {
+                        Toast.makeText(this,
+                                "Username already taken",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    createChildWithLogin(parentUid, name, age, username, password);
                 });
     }
 
-    // Parent creates child
-    private void addChildFromParent(String parentUid, String name, String age) {
+    private void createChildWithLogin(
+            String parentUid, String name, String age,
+            String username, String password) {
+
+        String childId = UUID.randomUUID().toString();
+
+        Map<String, Object> child = new HashMap<>();
+        child.put("name", name);
+        child.put("age", age);
+        child.put("parentId", parentUid);
+        child.put("username", username);
+        child.put("password", password);
+        child.put("hasCompletedOnboarding", false);
+
+        db.collection("children").document(childId)
+                .set(child)
+                .addOnSuccessListener(ignored -> {
+                    linkChildToParent(parentUid, childId);
+                });
+    }
+
+    private void createChildWithoutLogin(String parentUid, String name, String age) {
+
         String childId = UUID.randomUUID().toString();
 
         Map<String, Object> child = new HashMap<>();
@@ -118,54 +188,40 @@ public class SignUpActivity extends AppCompatActivity {
         child.put("parentId", parentUid);
         child.put("username", null);
         child.put("password", null);
-        child.put("additionalNote", null);
-        child.put("sharedProviders", new ArrayList<>());
-
-        //Add onboarding status
         child.put("hasCompletedOnboarding", false);
 
         db.collection("children").document(childId)
                 .set(child)
-                .addOnSuccessListener(aVoid -> {
-
-                    db.collection("users").document(parentUid)
-                            .update("linkedChildren", com.google.firebase.firestore.FieldValue.arrayUnion(childId))
-                            .addOnSuccessListener(unused -> {
-                                Toast.makeText(this, "Parent Sign up successful!", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(this, LoginActivity.class));
-                                finish();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Child created but failed to link to parent", Toast.LENGTH_SHORT).show()
-                            );
-
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to save child.", Toast.LENGTH_SHORT).show());
+                .addOnSuccessListener(ignored -> {
+                    linkChildToParent(parentUid, childId);
+                });
     }
 
-    // Child self signup (has own login)
-    private void addChildSelfSignup(String uid, String name, String age) {
-
-        String childId = uid;  // child’s own UID used as childId
+    private void createSelfChild(String uid, String name, String age,
+                                 String username, String password) {
 
         Map<String, Object> child = new HashMap<>();
         child.put("name", name);
         child.put("age", age);
         child.put("parentId", null);
-        child.put("username", emailField.getText().toString().trim());
-        child.put("password", passwordField.getText().toString().trim());
-        child.put("sharedProviders", new ArrayList<>());
-
-        // Child must also complete onboarding
+        child.put("username", username);
+        child.put("password", password);
         child.put("hasCompletedOnboarding", false);
 
-        db.collection("children").document(childId)
+        db.collection("children").document(uid)  // Self-signup uses uid
                 .set(child)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Child Sign up successful!", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, LoginActivity.class));
-                    finish();
-                });
+                .addOnSuccessListener(ignored -> goLogin());
+    }
+
+    private void linkChildToParent(String parentUid, String childId) {
+        db.collection("users").document(parentUid)
+                .update("linkedChildren", com.google.firebase.firestore.FieldValue.arrayUnion(childId))
+                .addOnSuccessListener(ignored -> goLogin());
+    }
+
+    private void goLogin() {
+        Toast.makeText(this, "Signup successful!", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, LoginActivityView.class));
+        finish();
     }
 }

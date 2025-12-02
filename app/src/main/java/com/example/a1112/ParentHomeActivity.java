@@ -126,7 +126,7 @@ public class ParentHomeActivity extends AppCompatActivity {
         buttonSignOut.setOnClickListener(v -> {
             auth.signOut();
 
-            Intent intent = new Intent(ParentHomeActivity.this, LoginActivity.class);
+            Intent intent = new Intent(ParentHomeActivity.this, LoginActivityView.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
 

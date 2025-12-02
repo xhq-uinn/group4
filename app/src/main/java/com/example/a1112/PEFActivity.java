@@ -52,7 +52,7 @@ public class PEFActivity extends AppCompatActivity {
             Toast.makeText(this,
                     "Not signed in. Returning to login.",
                     Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(PEFActivity.this, LoginActivity.class));
+            startActivity(new Intent(PEFActivity.this, LoginActivityView.class));
             finish();
             return;
         }
