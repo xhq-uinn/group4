@@ -74,24 +74,23 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.718" />
+        app:layout_constraintVertical_bias="0.689" />
 
     <TextView
         android:id="@+id/textView7"
-        android:layout_width="255dp"
-        android:layout_height="33dp"
-        android:layout_marginBottom="160dp"
+        android:layout_width="261dp"
+        android:layout_height="48dp"
+        android:layout_marginBottom="48dp"
         android:text="Tips: Your parents can see what you log. Your doctors only see what your parents share."
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.141"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/out"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="88dp"
+        android:layout_marginBottom="132dp"
         android:text="Sign Out"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
