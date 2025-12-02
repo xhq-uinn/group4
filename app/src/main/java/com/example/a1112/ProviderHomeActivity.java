@@ -97,9 +97,12 @@ public class ProviderHomeActivity extends AppCompatActivity {
                 return;
             }
 
+            //disable button while validating and change display
             submitButton.setEnabled(false);
             submitButton.setText("Validating...");
 
+
+            //check for invite code in database
             db.collection("invites").document(inviteCode)
                     .get()
                     .addOnCompleteListener(task -> {
@@ -117,6 +120,8 @@ public class ProviderHomeActivity extends AppCompatActivity {
                             Toast.makeText(this, "Invalid invite code", Toast.LENGTH_SHORT).show();
                             return;
                         }
+
+                        //get invite fields data and determine validity based on used, date and if child is already linked
 
                         Boolean used = inviteDoc.getBoolean("used");
                         String parentId = inviteDoc.getString("parentId");
@@ -139,6 +144,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
                             return;
                         }
 
+                        //passes checks then link child to provider in children collection
                         String providerId = getCurrentProviderId();
                         linkChildToProvider(childId, inviteCode, providerId);
                     })
@@ -149,6 +155,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
                     });
         });
 
+        //route provider to child details page with selected child's data passed as intent
         buttonViewDetails.setOnClickListener(v -> {
             if (selectedChild != null) {
                 Intent intent = new Intent(ProviderHomeActivity.this, ProviderMainActivity.class);
@@ -172,6 +179,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
         String providerId = getCurrentProviderId();
         if (providerId == null) return;
 
+        //listener querying all children linked to provider and getting their details and changing display whenever data changes
         patientsListener = db.collection("children")
                 .whereArrayContains("sharedProviders", providerId)
                 .addSnapshotListener((value, error) -> {
@@ -198,6 +206,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
                 });
     }
 
+    //adds the provider to the child's sharedProviders list and updates invite and sharing settings
     private void linkChildToProvider(String childId, String inviteCode, String providerId) {
         if (providerId == null) {
             Toast.makeText(this, "Error: Provider not authenticated", Toast.LENGTH_SHORT).show();
@@ -207,7 +216,7 @@ public class ProviderHomeActivity extends AppCompatActivity {
         db.collection("children")
                 .document(childId)
                 .update("sharedProviders", FieldValue.arrayUnion(providerId))
-                .addOnSuccessListener(aVoid -> updateInviteAndSharingSettings(childId, inviteCode, providerId))
+                .addOnSuccessListener(result -> updateInviteAndSharingSettings(childId, inviteCode, providerId))
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error linking patient: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
@@ -216,15 +225,14 @@ public class ProviderHomeActivity extends AppCompatActivity {
     private void updateInviteAndSharingSettings(String childId, String inviteCode, String providerId) {
         WriteBatch batch = db.batch();
 
-        // Update invites/{inviteCode} (Mark as used)
+        //set invite as used and mark by whom it was used
         batch.update(
                 db.collection("invites").document(inviteCode),
                 "used", true,
                 "usedByProviderId", providerId
         );
 
-        // Update children/{childId}/sharingSettings/{inviteCode} (Set providerId)
-        // This is the missing piece to populate the providerId field in the sharing settings document.
+        //add the provider to the child's sharingSettings document
         batch.update(
                 db.collection("children")
                         .document(childId)
@@ -234,34 +242,22 @@ public class ProviderHomeActivity extends AppCompatActivity {
         );
 
         batch.commit()
-                .addOnSuccessListener(aVoid -> {
+                .addOnSuccessListener(result -> {
                     inviteCodeEditText.setText("");
                     Toast.makeText(this, "Child linked! Settings updated.", Toast.LENGTH_SHORT).show();
-                    // setupRealTimePatientUpdates() 会自动触发，更新列表
                 })
                 .addOnFailureListener(e -> {
                     Log.e("ProviderHome", "Batch write failed: " + e.getMessage());
                     Toast.makeText(this, "Error updating invite records.", Toast.LENGTH_SHORT).show();
                 });
     }
+
+    //returns the current authenticated users id which is always a provider
     private String getCurrentProviderId() {
         return mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
     }
 
 
-    private void markInviteAsUsed(String inviteCode, String providerId) {
-        db.collection("invites").document(inviteCode)
-                .update(
-                        "used", true,
-                        "usedByProviderId", providerId
-                )
-                .addOnSuccessListener(aVoid -> {
-                    inviteCodeEditText.setText("");
-                    Toast.makeText(this, "Child linked!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error updating invite", Toast.LENGTH_SHORT).show());
-    }
     //helper to check whether 7 days in milliseconds have passed since invites creation
     private boolean isInviteExpired(Date createdAt) {
         long sevenDaysMs = 7L * 24 * 60 * 60 * 1000;

@@ -48,6 +48,7 @@ public class ProviderMainActivity extends AppCompatActivity {
     private MedicineLogAdapter rescueLogsAdapter;
 
     private TextView controllerAdherenceNotShared, controllerAdherenceSummary;
+
     private TextView symptomsNotShared, symptomsSummary, noSymptomsText;
 
     private TextView triggersNotShared, triggersSummary;
@@ -121,7 +122,9 @@ public class ProviderMainActivity extends AppCompatActivity {
         buttonBack.setOnClickListener(v -> finish());
     }
 
+    //realtime listener to update display in real time if parent has changed provider toggles
     private void setupSharedSettingsListener() {
+        // listen for changes to the sharing settings and update display
         sharingListener = db.collection("children")
                 .document(childId)
                 .collection("sharingSettings")
@@ -145,8 +148,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                     // get the settings instance and update all visibilities accordingly
                     DocumentSnapshot doc = result.getDocuments().get(0);
 
-                    // We now rely entirely on the individual sharing settings.
-                    // If a field is missing (null), the updateXxxVisibility method will hide that section.
+                    //no error and result is non empty so we can update all sections based on individual sharingSettings
                     updateRescueLogsVisibility(doc.getBoolean("rescueLogs"));
                     updateControllerAdherenceVisibility(doc.getBoolean("controllerAdherence"));
                     updateSymptomsVisibility(doc.getBoolean("symptoms"));
@@ -157,24 +159,14 @@ public class ProviderMainActivity extends AppCompatActivity {
                 });
     }
 
-    // NEW: Dedicated helper to hide all sections in case of error or missing document
-    private void hideAllSectionsDueToError() {
-        // Pass 'false' to all update functions to ensure everything is hidden.
-        updateRescueLogsVisibility(false);
-        updateControllerAdherenceVisibility(false);
-        updateSymptomsVisibility(false);
-        updateTriggersVisibility(false);
-        updatePeakFlowVisibility(false);
-        updateTriageVisibility(false);
-        updateRescueTrendVisibility(false);
-    }
-
     //show or hide rescue logs and display message depending on sharing settings
     private void updateRescueLogsVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //when shared hide not shared message and load logs
             rescueLogsNotShared.setVisibility(View.GONE);
             loadRescueLogs();
         } else {
+            //when not shared show not shared message and hide logs
             rescueLogsNotShared.setVisibility(View.VISIBLE);
             rescueLogsRecyclerView.setVisibility(View.GONE);
             noRescueLogsText.setVisibility(View.GONE);
@@ -190,6 +182,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                 .limit(25)
                 .get()
                 .addOnSuccessListener(docs -> {
+                    //reset the rescuelogs list and reinitialize with the latest 25 logs
                     rescueLogs.clear();
                     for (QueryDocumentSnapshot doc : docs) {
                         MedicineLog log = doc.toObject(MedicineLog.class);
@@ -211,9 +204,11 @@ public class ProviderMainActivity extends AppCompatActivity {
     //show or hide controllerAdherence and display message depending on sharing settings
     private void updateControllerAdherenceVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //when shared hide not shared message and show adherence
             controllerAdherenceNotShared.setVisibility(View.GONE);
             calculateControllerAdherence();
         } else {
+            //when not shared show not shared message and hide adherence
             controllerAdherenceNotShared.setVisibility(View.VISIBLE);
             controllerAdherenceSummary.setVisibility(View.GONE);
         }
@@ -222,6 +217,7 @@ public class ProviderMainActivity extends AppCompatActivity {
     //Find number of planned days completed in last 7 days by comparing logged doses and parent configured schedule
     private void calculateControllerAdherence() {
 
+        //first check if parent setup a schedule
         db.collection("controllerSchedules")
                 .document(childId)
                 .get()
@@ -238,6 +234,8 @@ public class ProviderMainActivity extends AppCompatActivity {
                     cal.add(Calendar.DAY_OF_YEAR, -7);
                     Date sevenDaysAgo = cal.getTime();
 
+                    //get all logs in hte last 7 days and calculate if the day was completed succesfully
+                    //assumption: considering all days not just planned
                     db.collection("medicineLogs")
                             .whereEqualTo("childId", childId)
                             .whereEqualTo("type", "controller")
@@ -255,9 +253,11 @@ public class ProviderMainActivity extends AppCompatActivity {
     //show or hide symptoms and display message depending on sharing settings
     private void updateSymptomsVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //when shared hide not shared message and load symptoms
             symptomsNotShared.setVisibility(View.GONE);
             loadSymptomsSummary();
         } else {
+            //when not shared show not shared message and hide symptoms
             symptomsNotShared.setVisibility(View.VISIBLE);
             symptomsSummary.setVisibility(View.GONE);
             noSymptomsText.setVisibility(View.GONE);
@@ -281,6 +281,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                     int nightWakingDays = 0;
                     int coughWheezeDays = 0;
 
+                    //go over all returned snapshots and check if each symptom was reported and add it to tally
                     for (QueryDocumentSnapshot doc : docs) {
                         String activityLimit = doc.getString("activityLimit");
                         if (activityLimit != null && !"none".equals(activityLimit)) {
@@ -310,9 +311,11 @@ public class ProviderMainActivity extends AppCompatActivity {
                     }
 
                     if (docs.isEmpty()) {
+                        //when no symptoms show no symptoms message
                         noSymptomsText.setVisibility(View.VISIBLE);
                         symptomsSummary.setVisibility(View.GONE);
                     } else {
+                        //when symptoms are reported show symptoms summary
                         symptomsSummary.setVisibility(View.VISIBLE);
                         noSymptomsText.setVisibility(View.GONE);
                         symptomsSummary.setText(summary.toString());
@@ -323,9 +326,11 @@ public class ProviderMainActivity extends AppCompatActivity {
     //show or hide Triggers and display message depending on sharing settings
     private void updateTriggersVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //when shared hide not shared message and load triggers
             triggersNotShared.setVisibility(View.GONE);
             loadTriggersSummary();
         } else {
+            //when not shared show not shared message and hide triggers
             triggersNotShared.setVisibility(View.VISIBLE);
             triggersSummary.setVisibility(View.GONE);
         }
@@ -345,6 +350,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                 .addOnSuccessListener(docs -> {
                     int exercise = 0, coldAir = 0, dustPets = 0, smoke = 0, illness = 0, odors = 0;
 
+                    //go over all returned snapshots and check if each trigger was reported and add it to tally
                     for (QueryDocumentSnapshot doc : docs) {
                         List<String> triggers = (List<String>) doc.get("triggers");
                         if (triggers != null) {
@@ -369,6 +375,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                     if (illness > 0) summary.append("• Illness: ").append(illness).append(" days\n");
                     if (odors > 0) summary.append("• Odors: ").append(odors).append(" days\n");
 
+                    //if no trigger details are appended to summary message after going over all dailycheckins display no triggers
                     if (summary.toString().equals("Last 7 days:\n")) {
                         summary.append("No triggers reported");
                     }
@@ -381,6 +388,7 @@ public class ProviderMainActivity extends AppCompatActivity {
     //show or hide PEF and display message depending on sharing settings
     private void updatePeakFlowVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //s
             peakFlowNotShared.setVisibility(View.GONE);
             loadPeakFlowSummary();
         } else {
@@ -429,9 +437,11 @@ public class ProviderMainActivity extends AppCompatActivity {
     //show or hide Triage incidents and display message depending on sharing settings
     private void updateTriageVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //when shared hide not shared message and load triage incidents
             triageNotShared.setVisibility(View.GONE);
             loadTriageDisplay();
         } else {
+            //when not shared show not shared message and hide triage incidents
             triageNotShared.setVisibility(View.VISIBLE);
             triageDisplay.setVisibility(View.GONE);
             noTriageText.setVisibility(View.GONE);
@@ -456,6 +466,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                     StringBuilder summary = new StringBuilder("Last 5 incidents:\n");
                     SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, h:mm a", Locale.getDefault());
 
+                    //go over each incident and add its details to the summary display
                     for (QueryDocumentSnapshot doc : result) {
                         Date timestamp = doc.getDate("timestamp");
                         String guidance = doc.getString("guidance");
@@ -481,12 +492,14 @@ public class ProviderMainActivity extends AppCompatActivity {
     //show or hide escue trend and display message depending on sharing settings
     private void updateRescueTrendVisibility(Boolean isShared) {
         if (isShared != null && isShared) {
+            //when shared hide not shared message and load rescue trend
             rescueTrendNotShared.setVisibility(View.GONE);
             providerChartTrend.setVisibility(View.VISIBLE);
 
-            // Load rescue trend for last 7 days
+            // Also, load rescue trend for last 7 days
             loadRescueTrendChart();
         } else {
+            //when not shared show not shared message and hide rescue trend
             rescueTrendNotShared.setVisibility(View.VISIBLE);
             providerChartTrend.setVisibility(View.GONE);
         }
@@ -494,6 +507,7 @@ public class ProviderMainActivity extends AppCompatActivity {
 
 
     private void loadRescueTrendChart() {
+        //reset chart
         providerChartTrend.clear();
         providerChartTrend.getDescription().setEnabled(false);
         providerChartTrend.getAxisRight().setEnabled(false);
@@ -504,6 +518,7 @@ public class ProviderMainActivity extends AppCompatActivity {
         calendar.add(Calendar.DAY_OF_YEAR, -7);
         Date sevenDaysAgo = calendar.getTime();
 
+        //get all rescue logs in the last 7 days
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
                 .whereEqualTo("type", "rescue")
@@ -512,6 +527,7 @@ public class ProviderMainActivity extends AppCompatActivity {
                 .addOnSuccessListener(docs -> {
                     float[] dailyCounts = new float[7];
 
+                    //go over each log, get the date of the log and add it to the dailyCounts array for that day
                     for (QueryDocumentSnapshot doc : docs) {
                         Date logDate = doc.getDate("timestamp");
                         if (logDate != null) {
@@ -533,6 +549,7 @@ public class ProviderMainActivity extends AppCompatActivity {
     }
 
     private void updateRescueTrendChart(float[] dailyCounts) {
+        // if no daily rescue count data hide chart and show no data message
         if (dailyCounts == null || dailyCounts.length == 0) {
             providerChartTrend.clear();
             return;
@@ -553,19 +570,19 @@ public class ProviderMainActivity extends AppCompatActivity {
             labels.add(labelFormat.format(d));
         }
 
+        // create line dataset and set colors and line style
         LineDataSet dataSet = new LineDataSet(entries, "Rescue uses per day");
         dataSet.setDrawValues(false);
         dataSet.setLineWidth(2f);
         dataSet.setCircleRadius(3f);
         dataSet.setDrawCircleHole(false);
         dataSet.setMode(LineDataSet.Mode.LINEAR);
-
         dataSet.setColor(getResources().getColor(R.color.LightPurple));
         dataSet.setCircleColor(getResources().getColor(R.color.Purple));
-
         LineData lineData = new LineData(dataSet);
         providerChartTrend.setData(lineData);
 
+        //setup and format the x and y axis
         XAxis xAxis = providerChartTrend.getXAxis();
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setLabelCount(Math.min(labels.size(), 7), true);
@@ -653,6 +670,18 @@ public class ProviderMainActivity extends AppCompatActivity {
             }
         }
         return count;
+    }
+
+    //helper function that hides all sections in case of error
+    private void hideAllSectionsDueToError() {
+        // Pass 'false' to all update functions to ensure everything is hidden.
+        updateRescueLogsVisibility(false);
+        updateControllerAdherenceVisibility(false);
+        updateSymptomsVisibility(false);
+        updateTriggersVisibility(false);
+        updatePeakFlowVisibility(false);
+        updateTriageVisibility(false);
+        updateRescueTrendVisibility(false);
     }
 
     @Override
