@@ -462,14 +462,19 @@ public class ProviderReportActivity extends AppCompatActivity {
                     DocumentSnapshot settingsDoc = settingsDocs.getDocuments().get(0);
                     Boolean triageEnabled = settingsDoc.getBoolean("triageIncidents");
 
-                    // only show if both permission and triage incidents are enabled
+                    // only show if triage incidents are shared
                     if (triageEnabled == null || !triageEnabled) {
                         hideTriageIncidents();
                         return;
                     }
 
-                    // fetch the last 5 triage incidents from incidentLogs
+                    Calendar cal = Calendar.getInstance();
+                    cal.add(Calendar.MONTH, reportPeriodMonths);
+                    Date startDate = cal.getTime();
+
+                    // get all triage incidents from incidentLogs in timeframe
                     db.collection("children").document(childId).collection("incidentLogs")
+                            .whereGreaterThanOrEqualTo("timestamp", startDate)
                             .orderBy("timestamp", Query.Direction.DESCENDING)
                             .get()
                             .addOnSuccessListener(result -> {
