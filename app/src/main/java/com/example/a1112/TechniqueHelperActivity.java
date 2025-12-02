@@ -35,7 +35,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
     private TextView tvStepTitle, tvStepDescription, tvCountdown;
     private PlayerView videoStep;
     private Button btnRestart;
-    private Button btnFinish; // NEW: Explicit Finish button
+    private Button btnFinish;
     private LinearLayout llTechniqueQuality;
     private Button btnHighQuality, btnNeedAssistance;
 
@@ -64,7 +64,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         }
 
         db = FirebaseFirestore.getInstance();
-        initializeSession(); // Start tracking the session in Firestore
+        initializeSession();
 
         // Initialize UI components
         tvStepTitle = findViewById(R.id.tvStepTitle);
@@ -79,9 +79,9 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         btnNeedAssistance = findViewById(R.id.btnNeedAssistance);
 
         // UI setup
-        btnRestart.setVisibility(View.GONE); // Hide Restart by default
-        btnFinish.setVisibility(View.GONE); // NEW: Hide Finish by default
-        llTechniqueQuality.setVisibility(View.VISIBLE); // Show navigation by default
+        btnRestart.setVisibility(View.GONE);
+        btnFinish.setVisibility(View.GONE);
+        llTechniqueQuality.setVisibility(View.VISIBLE);
 
         // Initialize ExoPlayer
         player = new ExoPlayer.Builder(this).build();
@@ -116,12 +116,6 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         setupListeners();
     }
 
-    // --- Firestore Session Tracking ---
-
-    /**
-     * Creates a new unique session ID and initializes the document in Firestore
-     * with default quality 'high-quality' and completed 'false'.
-     */
     private void initializeSession() {
         // Only generate a new ID and create the session on initial launch
         sessionId = UUID.randomUUID().toString();
@@ -131,11 +125,6 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         Log.i(TAG, "New technique session started with ID: " + sessionId);
     }
 
-    /**
-     * Updates the session quality and completion status in Firestore.
-     * @param quality The session quality ("high-quality" or "low-quality").
-     * @param isInitialCreation True if this is the first time writing the document.
-     */
     private void updateSessionQuality(String quality, boolean isInitialCreation) {
         Map<String, Object> sessionUpdate = new HashMap<>();
         sessionUpdate.put("quality", quality);
@@ -157,43 +146,27 @@ public class TechniqueHelperActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to update session quality: " + e.getMessage()));
     }
 
-    // --- Listeners and Navigation ---
-
-    // TechniqueHelperActivity.java
-
-// --- Listeners and Navigation ---
-
-    // TechniqueHelperActivity.java
-
-// --- Listeners and Navigation ---
-
     private void setupListeners() {
 
-        // 1. High Quality Button: Marks high quality AND moves to the next step.
         btnHighQuality.setOnClickListener(v -> {
             Log.d(TAG, "Step " + (currentStepIndex + 1) + " marked as High Quality. Proceeding.");
             goToNextStep();
         });
 
-        // 2. Need Assistance Button (Low Quality): Flags the entire session as low quality,
-        // immediately updates Firestore to 'low-quality', and moves to the next step.
         btnNeedAssistance.setOnClickListener(v -> {
             isLowQuality = true; // Set local flag for low quality
 
-            // IMPORTANT FIX: Immediately update Firestore quality to low-quality.
-            // We use the current sessionId and keep isFinished=false.
             updateSessionQuality("low-quality", false);
 
             Toast.makeText(this, "Marked Step " + (currentStepIndex + 1) + " as LOW Quality. Session is now Low Quality.", Toast.LENGTH_SHORT).show();
             goToNextStep();
         });
 
-        // 3. Restart button click (jump to Step 5) - NO NEW SESSION ID
         btnRestart.setOnClickListener(v -> {
             // Reset state for new attempt using the SAME session ID
             isLowQuality = false; // Reset quality flag
             isFinished = false;
-            currentStepIndex = 4; // Step 5 index
+            currentStepIndex = 4; // Step 5
 
             // UI Reset
             btnRestart.setVisibility(View.GONE);
@@ -207,7 +180,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
             loadStep(currentStepIndex);
         });
 
-        // 4. Finish button click - Explicitly marks session as COMPLETED
+        // Finish button click - Explicitly marks session as COMPLETED
         btnFinish.setOnClickListener(v -> {
             isFinished = true; // Mark session as finished
             String finalQuality = isLowQuality ? "low-quality" : "high-quality";
@@ -222,14 +195,9 @@ public class TechniqueHelperActivity extends AppCompatActivity {
             btnFinish.setVisibility(View.GONE);
             Toast.makeText(this, "Session Completed! Thank you.", Toast.LENGTH_LONG).show();
 
-            // Optional: Auto-close after a few seconds
-            // new android.os.Handler().postDelayed(() -> finish(), 3000);
         });
     }
 
-    /**
-     * Handles progression to the next step or shows the final control buttons.
-     */
     private void goToNextStep() {
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -240,12 +208,10 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         if (currentStepIndex < steps.size()) {
             loadStep(currentStepIndex);
         } else {
-            // All steps reviewed. Show final options (Restart or Finish).
 
-            // UI update: Hide navigation, show Restart and Finish
             llTechniqueQuality.setVisibility(View.GONE); // Hide High/Low quality buttons
-            btnRestart.setVisibility(View.VISIBLE); // Show Restart button
-            btnFinish.setVisibility(View.VISIBLE); // NEW: Show Finish button
+            btnRestart.setVisibility(View.VISIBLE); // Restart button
+            btnFinish.setVisibility(View.VISIBLE); // Finish button
             videoStep.setVisibility(View.GONE);
 
             String status = isLowQuality ? "needs practice" : "looks good";
@@ -254,11 +220,8 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         }
     }
 
-    // (loadStep, startCountdown, Step class, and Lifecycle methods remain the same as the final version)
 
-    /**
-     * Loads the UI content for the current step, prepares the video, and updates button text.
-     */
+
     private void loadStep(int index) {
         // Update button text for the final step
         if (index == steps.size() - 1) {
@@ -295,9 +258,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Starts the countdown timer for steps requiring a hold or wait period.
-     */
+
     private void startCountdown(int seconds) {
         tvCountdown.setVisibility(View.VISIBLE);
         countDownTimer = new CountDownTimer(seconds * 1000L, 1000) {
@@ -312,8 +273,6 @@ public class TechniqueHelperActivity extends AppCompatActivity {
             }
         }.start();
     }
-
-    // --- Lifecycle Methods ---
 
     @Override
     protected void onPause() {
@@ -344,9 +303,6 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Helper class to define a single step in the technique session.
-     */
     private static class Step {
         String title;
         String description;

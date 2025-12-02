@@ -39,8 +39,8 @@ public class ProviderListActivity extends AppCompatActivity
     private FirebaseFirestore db;
     private FirebaseAuth auth;
 
-    private String childId;  // ID of the current child
-    private String parentId; // ID of the currently logged-in parent
+    private String childId;
+    private String parentId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -74,7 +74,6 @@ public class ProviderListActivity extends AppCompatActivity
 
         // Initialize RecyclerView components
         providerList = new ArrayList<>();
-        // 2. Update Adapter initialization: pass 'this' as the listener
         adapter = new ProviderInviteAdapter(providerList, this, childId, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
@@ -90,16 +89,8 @@ public class ProviderListActivity extends AppCompatActivity
     public void onDeleteInvite(String inviteCode, String providerId, int position) {
         // Check if the invite has been accepted (providerId exists)
         if (providerId != null && !providerId.isEmpty()) {
-            // SCENARIO 1: Association already established (Provider has accepted)
-            // Show a message that revoke is invalid/blocked
             Toast.makeText(ProviderListActivity.this, "Association already established. Revoke action is blocked.", Toast.LENGTH_LONG).show();
-
-            // Optional: If you still want to allow 'unshare' or 'deactivate' here,
-            // you would call a different method, but direct deletion (revoke) is not allowed.
-
         } else {
-            // SCENARIO 2: Invite has NOT been accepted
-            // Proceed with the actual deletion from Firestore
             deleteInviteCode(inviteCode, position);
         }
     }
@@ -130,7 +121,6 @@ public class ProviderListActivity extends AppCompatActivity
     }
 
     // Queries Firestore for all existing sharing settings (invites) for the current child.
-    // Queries Firestore for all existing sharing settings (invites) for the current child.
     private void loadProviderInvites() {
         providerList.clear();
 
@@ -146,9 +136,6 @@ public class ProviderListActivity extends AppCompatActivity
 
                         // Read all sharing fields
                         Map<String, Boolean> sharingFields = new HashMap<>();
-
-                        // --- MODIFICATION: Removed reading "permissionEnabled" ---
-
                         // Detailed permissions, defaulting to false if missing
                         sharingFields.put("rescueLogs", doc.getBoolean("rescueLogs") != null ? doc.getBoolean("rescueLogs") : false);
                         sharingFields.put("controllerAdherence", doc.getBoolean("controllerAdherence") != null ? doc.getBoolean("controllerAdherence") : false);
@@ -160,24 +147,23 @@ public class ProviderListActivity extends AppCompatActivity
 
                         providerList.add(new ProviderInvite(inviteCode, providerId, sharingFields));
                     }
-                    adapter.notifyDataSetChanged(); // Update the RecyclerView
+                    adapter.notifyDataSetChanged();
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Failed to load invites: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
 
     private void createInviteCode() {
-        String code = generateCode(8); // Generate an 8-character code
+        String code = generateCode(8);
         WriteBatch batch = db.batch();
 
         // Set children/{childId}/sharingSettings/{code} document (Permissions)
         Map<String, Object> sharingSettingsData = new HashMap<>();
-        sharingSettingsData.put("providerId", null); // Initial providerId is null
+        sharingSettingsData.put("providerId", null);
         sharingSettingsData.put("parentId", parentId);
 
 
         // 7 detailed sharing fields, defaulting to false
-        // NOTE: We initialize all 7 detailed fields here.
         sharingSettingsData.put("rescueLogs", false);
         sharingSettingsData.put("controllerAdherence", false);
         sharingSettingsData.put("symptoms", false);
@@ -191,20 +177,20 @@ public class ProviderListActivity extends AppCompatActivity
                 .collection("sharingSettings")
                 .document(code), sharingSettingsData);
 
-        // Set invites/{code} document (Metadata)
+        // Set invites/{code} document
         Map<String, Object> inviteMetadata = new HashMap<>();
         inviteMetadata.put("childId", childId);
         inviteMetadata.put("parentId", parentId);
 
-        // Calculate creation time and expiry time (7 days from now)
+        // Calculate creation time and expiry time
         Date now = new Date();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
-        calendar.add(Calendar.DAY_OF_YEAR, 7); // Add 7 days
+        calendar.add(Calendar.DAY_OF_YEAR, 7);
         Date expiresAt = calendar.getTime();
 
         inviteMetadata.put("createdAt", now);
-        inviteMetadata.put("expiresAt", expiresAt); // 7-day expiry time
+        inviteMetadata.put("expiresAt", expiresAt);
 
         // Invite status defaults to unused
         inviteMetadata.put("used", false);
@@ -217,8 +203,6 @@ public class ProviderListActivity extends AppCompatActivity
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Invite created: " + code, Toast.LENGTH_LONG).show();
 
-                    // Refresh the list to show the new invite
-                    // We call loadProviderInvites() here to pick up the new invite immediately
                     loadProviderInvites();
 
                     // Navigate immediately to the settings page for configuration
