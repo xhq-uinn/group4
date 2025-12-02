@@ -259,6 +259,7 @@ public class InventoryActivity extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
 
                     checkMedicinesExpiry();
+                    checkMedicinesLow();
 
                 });
     }
@@ -316,6 +317,8 @@ public class InventoryActivity extends AppCompatActivity {
                 .update(updates)
                 .addOnSuccessListener(result -> {
                     Toast.makeText(this, "Medicine updated", Toast.LENGTH_SHORT).show();
+                    //check for low medcicne amount after updating a medicines details
+                    checkMedicineLowAlert(medicine);
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to update medicine", Toast.LENGTH_SHORT).show();
@@ -338,6 +341,8 @@ public class InventoryActivity extends AppCompatActivity {
                 .update(updates)
                 .addOnSuccessListener(result -> {
                     Toast.makeText(this, "Amount updated", Toast.LENGTH_SHORT).show();
+                    //check for low medcicne amount after updating a medicines current amount
+                    checkMedicineLowAlert(medicine);
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to update amount", Toast.LENGTH_SHORT).show();
@@ -592,6 +597,53 @@ public class InventoryActivity extends AppCompatActivity {
         } else {
             noMedicinesText.setVisibility(View.GONE);
             medicinesRecyclerView.setVisibility(View.VISIBLE);
+        }
+    }
+    private void checkMedicineLowAlert(Medicine medicine) {
+        if (medicine == null || medicine.getTotalAmount() <= 0) {
+            return;
+        }
+
+        double percentageRemaining = ((double) medicine.getCurrentAmount() / medicine.getTotalAmount()) * 100;
+
+        if (percentageRemaining <= 20 && percentageRemaining > 0) {
+            sendMedicineLowAlert(medicine.getName(), percentageRemaining, medicine.getCurrentAmount());
+        }
+    }
+
+    private void sendMedicineLowAlert (String medicineName, double percentageRemaining, int currentAmount) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+        String parentId = currentUser.getUid();
+
+        String percentageString = String.format(Locale.getDefault(), "%.0f%%", percentageRemaining);
+
+        Map<String, Object> alertInfo = new HashMap<>();
+        alertInfo.put("parentId", parentId);
+        alertInfo.put("childId", currentChildId);
+        alertInfo.put("type", "medicine_low");
+        alertInfo.put("medicineName", medicineName);
+        alertInfo.put("details", currentChildName + "'s " + medicineName +
+                " is running low (" + percentageString + " remaining, " +
+                currentAmount + " left)");
+        alertInfo.put("timestamp", new Date());
+
+        db.collection("alerts").add(alertInfo)
+                .addOnSuccessListener(result -> {
+                    Toast.makeText(this,
+                            medicineName + " is running low! (" + percentageString + " remaining)",
+                            Toast.LENGTH_LONG).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("LowMedicineAlert", "Failed to send low medicine alert", e);
+                });
+    }
+
+    private void checkMedicinesLow() {
+        for (Medicine medicine : medicines) {
+            checkMedicineLowAlert(medicine);
         }
     }
 
