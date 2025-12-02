@@ -129,8 +129,6 @@ public class TriageActivity extends AppCompatActivity {
         );
 
 
-        sendParentAlert("TRIAGE_STARTED",
-                "Child opened the triage screen.");
 
         btnRun.setOnClickListener(v -> runTriage());
     }
@@ -191,6 +189,9 @@ public class TriageActivity extends AppCompatActivity {
 
 
     private void runTriage() {
+
+        sendParentAlert("TRIAGE_STARTED",
+                "Child tapped triage (Get Help) and ran a check.");
 
 
         boolean hasRedFlag =
