@@ -50,7 +50,6 @@ public class ChildHomeActivity extends AppCompatActivity {
         Button out = findViewById(R.id.out);
         Button practice = findViewById(R.id.practice);
         Button progress = findViewById(R.id.progress);
-        Button history = findViewById(R.id.history);
         Button pefButton = findViewById(R.id.PEF);
 
         db = FirebaseFirestore.getInstance();
@@ -120,13 +119,6 @@ public class ChildHomeActivity extends AppCompatActivity {
                 Intent intent = new Intent(ChildHomeActivity.this, MotivationActivity.class);
                 intent.putExtra("childId", childId);
                 startActivity(intent);
-            });
-        }
-        if (history != null) {
-            history.setOnClickListener(v -> {
-                Intent i = new Intent(ChildHomeActivity.this, HistoryActivity.class);
-                i.putExtra("childId", childId);
-                startActivity(i);
             });
         }
         if (out != null) {
