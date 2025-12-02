@@ -172,6 +172,10 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error loading data", Toast.LENGTH_SHORT).show()
                 );
     }
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true); //disable back button when signed out
+    }
 }
 //    private void loginChild(String username, String password) {
 //        db.collection("children")

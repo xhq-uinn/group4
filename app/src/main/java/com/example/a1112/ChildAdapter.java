@@ -83,7 +83,37 @@ public class ChildAdapter extends RecyclerView.Adapter<ChildAdapter.ChildViewHol
             v.getContext().startActivity(intent);
         });
 
-        holder.childHomeBtn.setOnClickListener(v -> listener.onOpenChildHome(child));
+//        holder.childHomeBtn.setOnClickListener(v -> listener.onOpenChildHome(child));
+        holder.childHomeBtn.setOnClickListener(v -> {
+
+            FirebaseFirestore.getInstance()
+                    .collection("children")
+                    .document(child.getId())
+                    .get()
+                    .addOnSuccessListener(doc -> {
+
+                        boolean completed = false;
+
+                        if (doc.exists() && doc.getBoolean("hasCompletedOnboarding") != null) {
+                            completed = doc.getBoolean("hasCompletedOnboarding");
+                        }
+
+                        if (!completed) {
+                            //not completed Onboarding -> OnboardingActivity
+                            Intent intent = new Intent(v.getContext(), OnboardingActivity.class);
+                            intent.putExtra("childId", child.getId());
+                            v.getContext().startActivity(intent);
+                        } else {
+                            //completed -> Child Home
+                            listener.onOpenChildHome(child);
+                        }
+
+                    })
+                    .addOnFailureListener(e -> {
+                        //allow enter when firebase fail
+                        listener.onOpenChildHome(child);
+                    });
+        });
 
         holder.historyBtn.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), HistoryActivity.class);

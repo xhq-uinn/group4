@@ -1,8 +1,10 @@
 package com.example.a1112;
 
 import android.util.Log;
+
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.*;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -10,11 +12,13 @@ public class MotivationCalculator {
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    public interface Callback { void onComplete(); }
+    public interface Callback {
+        void onComplete();
+    }
 
-    // ===============================
+    // ============================================================
     // PUBLIC ENTRY
-    // ===============================
+    // ============================================================
     public void updateAllMotivation(String childId, Callback callback) {
 
         db.collection("children").document(childId)
@@ -35,20 +39,21 @@ public class MotivationCalculator {
                 });
     }
 
-    // ===============================
+    // ============================================================
     // SETTINGS
-    // ===============================
+    // ============================================================
     private static class Settings {
-        int controllerStreakTarget = 7;
-        int techniqueStreakTarget = 7;
-        int techniqueHighQualityCount = 10;
-        int lowRescueThreshold = 4;
+        int controllerStreakTarget = 7;        // perfect week target
+        int techniqueStreakTarget = 7;         // if needed
+        int techniqueHighQualityCount = 10;    // high-quality threshold
+        int lowRescueThreshold = 4;            // rescue days allowed
     }
 
-    private interface SettingsCallback { void onLoaded(Settings s); }
+    private interface SettingsCallback {
+        void onLoaded(Settings s);
+    }
 
     private void loadSettings(String parentId, SettingsCallback cb) {
-
         Settings s = new Settings();
 
         if (parentId.isEmpty()) {
@@ -73,8 +78,8 @@ public class MotivationCalculator {
                         if (doc.getLong("lowRescueThreshold") != null)
                             s.lowRescueThreshold = doc.getLong("lowRescueThreshold").intValue();
                     }
-                    cb.onLoaded(s);
 
+                    cb.onLoaded(s);
                 })
                 .addOnFailureListener(e -> {
                     Log.e("MOTIVATION", "Failed to load settings", e);
@@ -82,9 +87,9 @@ public class MotivationCalculator {
                 });
     }
 
-    // ===============================
+    // ============================================================
     // LOAD EVERYTHING
-    // ===============================
+    // ============================================================
     private void loadEverything(String childId, Settings settings, Callback callback) {
 
         List<MedicineLog> controllerLogs = new ArrayList<>();
@@ -95,15 +100,7 @@ public class MotivationCalculator {
         AtomicInteger loaded = new AtomicInteger(0);
         Runnable tryFinish = () -> {
             if (loaded.incrementAndGet() == 4) {
-                computeAndSave(
-                    childId,
-                    settings,
-                    controllerLogs,
-                    rescueLogs,
-                    techLogs,
-                    scheduleHolder[0],
-                    callback
-                );
+                computeAndSave(childId, settings, controllerLogs, rescueLogs, techLogs, scheduleHolder[0], callback);
             }
         };
 
@@ -131,7 +128,7 @@ public class MotivationCalculator {
                     tryFinish.run();
                 });
 
-        // Technique logs
+        // Technique sessions
         db.collection("children")
                 .document(childId)
                 .collection("technique_sessions")
@@ -143,7 +140,7 @@ public class MotivationCalculator {
                     tryFinish.run();
                 });
 
-        // Schedule
+        // Controller schedule
         db.collection("controllerSchedules")
                 .document(childId)
                 .get()
@@ -154,9 +151,9 @@ public class MotivationCalculator {
                 });
     }
 
-    // ===============================
+    // ============================================================
     // MAIN COMPUTATION
-    // ===============================
+    // ============================================================
     private void computeAndSave(
             String childId,
             Settings settings,
@@ -167,11 +164,11 @@ public class MotivationCalculator {
             Callback callback
     ) {
 
-        Map<String, Integer> controllerDaySum = buildControllerDayMap(controllerLogs);
+        Map<String, Integer> controllerMap = buildControllerDayMap(controllerLogs);
         Map<String, Boolean> techniqueCompleted = buildTechniqueCompletedMap(techLogs);
-        Map<String, Boolean> techniqueHighQuality = buildTechniqueHQMap(techLogs);
+        Map<String, Boolean> techniqueHQ = buildTechniqueHQMap(techLogs);
 
-        int controllerStreak = computeControllerStreak(schedule, controllerDaySum);
+        int controllerStreak = computeControllerStreak(schedule, controllerMap);
         int techniqueStreak = computeTechniqueStreak(schedule, techniqueCompleted);
 
         boolean perfectControllerWeek = computePerfectWeek(controllerLogs, settings);
@@ -194,9 +191,9 @@ public class MotivationCalculator {
                 .addOnSuccessListener(v -> callback.onComplete());
     }
 
-    // ===============================
-    // NORMALIZATION
-    // ===============================
+    // ============================================================
+    // NORMALIZATION HELPERS
+    // ============================================================
     private Map<String, Integer> buildControllerDayMap(List<MedicineLog> logs) {
         Map<String, Integer> map = new HashMap<>();
         Calendar c = Calendar.getInstance();
@@ -235,16 +232,14 @@ public class MotivationCalculator {
         return map;
     }
 
-    // ===============================
-    // STREAKS
-    // ===============================
-    private int computeControllerStreak(
-            ControllerSchedule schedule,
-            Map<String, Integer> controllerMap
-    ) {
+    // ============================================================
+    // STREAK CALCULATION (FINAL RULE)
+    // ============================================================
+    private int computeControllerStreak(ControllerSchedule schedule, Map<String, Integer> controllerMap) {
         if (schedule == null) return 0;
 
         int streak = 0;
+
         Calendar cursor = Calendar.getInstance();
         cursor.set(Calendar.HOUR_OF_DAY, 0);
         cursor.set(Calendar.MINUTE, 0);
@@ -255,45 +250,49 @@ public class MotivationCalculator {
             int dow = cursor.get(Calendar.DAY_OF_WEEK);
             int planned = schedule.getDoseForDay(dow);
 
-            if (planned <= 0) {
-                cursor.add(Calendar.DAY_OF_YEAR, -1);
-                continue;
-            }
-
             String key = cursor.get(Calendar.YEAR) + "-" + cursor.get(Calendar.DAY_OF_YEAR);
             int actual = controllerMap.getOrDefault(key, 0);
 
-            if (actual < planned) break;
+            if (planned == 0) {
+                if (actual == 0) {
+                    streak++; // success
+                } else break; // failed zero-day
+            } else {
+                if (actual == planned) {
+                    streak++;
+                } else break;
+            }
 
-            streak++;
             cursor.add(Calendar.DAY_OF_YEAR, -1);
         }
 
         return streak;
     }
 
-    private int computeTechniqueStreak(
-            ControllerSchedule schedule,
-            Map<String, Boolean> techniqueComplete
-    ) {
+    private int computeTechniqueStreak(ControllerSchedule schedule, Map<String, Boolean> techniqueComplete) {
         if (schedule == null) return 0;
 
         int streak = 0;
+
         Calendar cursor = Calendar.getInstance();
         cursor.set(Calendar.HOUR_OF_DAY, 0);
+        cursor.set(Calendar.MINUTE, 0);
+        cursor.set(Calendar.SECOND, 0);
+        cursor.set(Calendar.MILLISECOND, 0);
 
         while (true) {
             int dow = cursor.get(Calendar.DAY_OF_WEEK);
             int planned = schedule.getDoseForDay(dow);
 
-            if (planned <= 0) {
+            if (planned == 0) {
                 cursor.add(Calendar.DAY_OF_YEAR, -1);
                 continue;
             }
 
             String key = cursor.get(Calendar.YEAR) + "-" + cursor.get(Calendar.DAY_OF_YEAR);
 
-            if (!techniqueComplete.getOrDefault(key, false)) break;
+            if (!techniqueComplete.getOrDefault(key, false))
+                break;
 
             streak++;
             cursor.add(Calendar.DAY_OF_YEAR, -1);
@@ -302,27 +301,31 @@ public class MotivationCalculator {
         return streak;
     }
 
-    // ===============================
+    // ============================================================
     // BADGE CONDITIONS
-    // ===============================
+    // ============================================================
     private boolean computePerfectWeek(List<MedicineLog> logs, Settings s) {
-        Map<String, Boolean> daysCompleted = new HashMap<>();
+        // Build day-completed map
+        Set<String> completedDays = new HashSet<>();
         Calendar c = Calendar.getInstance();
 
         for (MedicineLog m : logs) {
             c.setTime(m.getTimestamp());
-            daysCompleted.put(
-                    c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR),
-                    true
-            );
+            String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
+            completedDays.add(key);
         }
 
         int count = 0;
+
         Calendar cur = Calendar.getInstance();
+        cur.set(Calendar.HOUR_OF_DAY, 0);
+        cur.set(Calendar.MINUTE, 0);
+        cur.set(Calendar.SECOND, 0);
+        cur.set(Calendar.MILLISECOND, 0);
 
         while (true) {
             String key = cur.get(Calendar.YEAR) + "-" + cur.get(Calendar.DAY_OF_YEAR);
-            if (daysCompleted.getOrDefault(key, false)) {
+            if (completedDays.contains(key)) {
                 count++;
                 cur.add(Calendar.DAY_OF_YEAR, -1);
             } else break;
@@ -332,12 +335,11 @@ public class MotivationCalculator {
     }
 
     private int countHighQuality(List<TechSession> techLogs) {
-        int count = 0;
+        int cnt = 0;
         for (TechSession t : techLogs) {
-            if ("high-quality".equalsIgnoreCase(t.quality))
-                count++;
+            if ("high-quality".equalsIgnoreCase(t.quality)) cnt++;
         }
-        return count;
+        return cnt;
     }
 
     private boolean checkLowRescue(Settings s, List<MedicineLog> rescueLogs) {
@@ -351,17 +353,18 @@ public class MotivationCalculator {
             long t = m.getTimestamp().getTime();
             if (now - t <= THIRTY) {
                 c.setTime(m.getTimestamp());
-                String k = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
-                rescueDays.add(k);
+                String key = c.get(Calendar.YEAR) + "-" + c.get(Calendar.DAY_OF_YEAR);
+                rescueDays.add(key);
             }
         }
 
         return rescueDays.size() <= s.lowRescueThreshold;
     }
 
-    // ===============================
+
+    // ============================================================
     // MODELS
-    // ===============================
+    // ============================================================
     private static class TechSession {
         public String quality;
         public boolean completed;
