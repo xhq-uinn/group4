@@ -168,15 +168,29 @@ public class MotivationCalculator {
         int techniqueStreak = computeTechniqueStreak(schedule, techniqueCompleted);
 
         boolean perfectControllerWeek = computePerfectWeek(controllerLogs, settings);
+
         int highQualityTechniqueCount = countHighQuality(techLogs);
+        boolean highQualityTechniqueBadge =
+                highQualityTechniqueCount >= settings.techniqueHighQualityCount;
+
         boolean lowRescueMonth = checkLowRescue(settings, rescueLogs);
+
+        List<String> badgeList = new ArrayList<>();
+        if (highQualityTechniqueBadge)
+            badgeList.add("High Quality Technique Sessions Badge");
+        if (perfectControllerWeek)
+            badgeList.add("Perfect Controller Week Badge");
+        if (lowRescueMonth)
+            badgeList.add("Low Rescue Month Badge");
 
         Map<String, Object> data = new HashMap<>();
         data.put("controllerStreak", controllerStreak);
         data.put("techniqueStreak", techniqueStreak);
         data.put("perfectControllerWeek", perfectControllerWeek);
         data.put("highQualityTechniqueCount", highQualityTechniqueCount);
+        data.put("highQualityTechniqueBadge", highQualityTechniqueBadge);
         data.put("lowRescueMonth", lowRescueMonth);
+        data.put("badges", badgeList);
         data.put("lastUpdated", Timestamp.now());
 
         db.collection("children")
@@ -332,6 +346,10 @@ public class MotivationCalculator {
             if ("high-quality".equalsIgnoreCase(t.quality)) cnt++;
         }
         return cnt;
+    }
+
+    private boolean computeHighQualityBadge(int totalHQ, Settings s) {
+        return totalHQ >= s.techniqueHighQualityCount;
     }
 
     private boolean checkLowRescue(Settings s, List<MedicineLog> rescueLogs) {
