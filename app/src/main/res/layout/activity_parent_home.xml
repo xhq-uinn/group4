@@ -5,35 +5,32 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="16dp"
     tools:context=".ParentHomeActivity">
 
-    <!-- Title -->
-
-    <!-- Children List Title -->
     <TextView
         android:id="@+id/text_parent_title"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="Manage Children &amp; Sharing"
         android:textSize="20sp"
         android:textStyle="bold"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-
-    <!-- Link Child-->
     <TextView
         android:id="@+id/textChildrenListTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:text="Children List"
         android:textColor="#000000"
         android:textSize="20sp"
         android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/btn_add_child"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text_parent_title" />
 
@@ -41,32 +38,33 @@
         android:id="@+id/btn_add_child"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="8dp"
         android:text="Add Child"
         app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle"
-        app:layout_constraintVertical_bias="0.476" />
+        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />
 
-<!--    <Button-->
-<!--        android:id="@+id/btn_link_child"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="Link Child"-->
-<!--        app:layout_constraintBottom_toBottomOf="@id/textChildrenListTitle"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="@id/textChildrenListTitle" />-->
     <Button
         android:id="@+id/btnMotivationSettings"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="4dp"
         android:text="Motivation Settings"
-        app:layout_constraintTop_toBottomOf="@id/btn_add_child"
+        app:layout_constraintEnd_toStartOf="@id/buttonGenerateReport"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle" />
+
+    <Button
+        android:id="@+id/buttonGenerateReport"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="4dp"
+        android:text="Generate Report"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnMotivationSettings"
+        app:layout_constraintTop_toBottomOf="@id/textChildrenListTitle" />
 
     <Button
         android:id="@+id/buttonMedicineLog"
@@ -75,7 +73,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="4dp"
         android:text="Medicine Log"
-        app:layout_constraintEnd_toStartOf="@+id/buttonInventory"
+        app:layout_constraintEnd_toStartOf="@id/buttonInventory"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnMotivationSettings" />
 
@@ -88,40 +86,29 @@
         android:text="Manage Medicines"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/buttonMedicineLog"
-        app:layout_constraintTop_toBottomOf="@id/btnMotivationSettings" />
-
-    <Button
-        android:id="@+id/buttonGenerateReport"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        android:text="Generate Report"
-        app:layout_constraintTop_toBottomOf="@id/buttonInventory"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Recycler for Child List -->
+        app:layout_constraintTop_toBottomOf="@id/buttonGenerateReport" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_children"
-        android:layout_width="334dp"
-        android:layout_height="504dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@id/btn_signout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonGenerateReport" />
+        app:layout_constraintTop_toBottomOf="@id/buttonMedicineLog" />
 
     <Button
         android:id="@+id/btn_signout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:text="Sign Out"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recycler_children" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
