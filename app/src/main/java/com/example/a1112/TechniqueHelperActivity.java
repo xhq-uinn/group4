@@ -46,7 +46,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
 
     private String childId;
     private FirebaseFirestore db;
-    private String sessionId; // Unique ID for tracking the current session in Firestore
+    private String sessionId; // track the current session in Firestore
     private boolean isLowQuality = false; // Tracks if the user failed any step
     private boolean isFinished = false; // Tracks if the session reached the end
 
@@ -83,11 +83,11 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         btnFinish.setVisibility(View.GONE);
         llTechniqueQuality.setVisibility(View.VISIBLE);
 
-        // Initialize ExoPlayer
+        // initialize ExoPlayer
         player = new ExoPlayer.Builder(this).build();
         videoStep.setPlayer(player);
 
-        // Initialize steps (Retained original data)
+        // initialize steps
         steps = new ArrayList<>();
         steps.add(new Step("Prepare Your Inhaler", "Remove the mouthpiece cap and shake before use.",
                 "android.resource://" + getPackageName() + "/" + R.raw.video1, 0));
@@ -163,12 +163,11 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         });
 
         btnRestart.setOnClickListener(v -> {
-            // Reset state for new attempt using the SAME session ID
+            // reset state for new attempt using the SAME session ID
             isLowQuality = false; // Reset quality flag
             isFinished = false;
             currentStepIndex = 4; // Step 5
 
-            // UI Reset
             btnRestart.setVisibility(View.GONE);
             btnFinish.setVisibility(View.GONE);
             videoStep.setVisibility(View.VISIBLE);
@@ -185,10 +184,10 @@ public class TechniqueHelperActivity extends AppCompatActivity {
             isFinished = true; // Mark session as finished
             String finalQuality = isLowQuality ? "low-quality" : "high-quality";
 
-            // Write the final quality and set completed=true in Firestore
+            // write the final quality and set completed=true in Firestore
             updateSessionQuality(finalQuality, false);
 
-            // Final UI confirmation before exiting
+            // final UI
             tvStepTitle.setText("Session Finished!");
             tvStepDescription.setText("Your technique session has been saved with quality: " + finalQuality);
             btnRestart.setVisibility(View.GONE);
@@ -209,9 +208,9 @@ public class TechniqueHelperActivity extends AppCompatActivity {
             loadStep(currentStepIndex);
         } else {
 
-            llTechniqueQuality.setVisibility(View.GONE); // Hide High/Low quality buttons
-            btnRestart.setVisibility(View.VISIBLE); // Restart button
-            btnFinish.setVisibility(View.VISIBLE); // Finish button
+            llTechniqueQuality.setVisibility(View.GONE); // hide High/Low quality buttons
+            btnRestart.setVisibility(View.VISIBLE); // restart button
+            btnFinish.setVisibility(View.VISIBLE); // finish button
             videoStep.setVisibility(View.GONE);
 
             String status = isLowQuality ? "needs practice" : "looks good";
@@ -236,7 +235,6 @@ public class TechniqueHelperActivity extends AppCompatActivity {
         tvStepTitle.setText("Step " + (index + 1) + ": " + step.title);
         tvStepDescription.setText(step.description);
 
-        // Original logic: always set and prepare media
         MediaItem mediaItem = MediaItem.fromUri(Uri.parse(step.videoUrl));
         player.setMediaItem(mediaItem);
         player.prepare();
@@ -277,7 +275,7 @@ public class TechniqueHelperActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // If the session is incomplete (not finished), mark it as low quality upon exit.
+        // if the session is incomplete (not finished), mark it as low quality upon exit.
         if (!isFinished) {
             updateSessionQuality("low-quality", false);
             Log.w(TAG, "Session incomplete. Quality set to low-quality on pause.");

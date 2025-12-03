@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit; // Import TimeUnit (though not directly used in the logic)
 
 public class ProviderListActivity extends AppCompatActivity
-        implements ProviderInviteAdapter.OnInviteActionListener { // Implement the interface for handling adapter actions
+        implements ProviderInviteAdapter.OnInviteActionListener {
 
-    private static final String TAG = "ProviderListActivity"; // Tag for logging
+    private static final String TAG = "ProviderListActivity";
 
     private RecyclerView recyclerView;
     private Button btnCreateInvite;
@@ -54,7 +54,7 @@ public class ProviderListActivity extends AppCompatActivity
         auth = FirebaseAuth.getInstance();
 
         FirebaseUser user = auth.getCurrentUser();
-        // Check if the user is authenticated
+        // check if the user is login
         if (user == null) {
             Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show();
             finish();
@@ -62,32 +62,31 @@ public class ProviderListActivity extends AppCompatActivity
         }
 
         parentId = user.getUid();
-        // Retrieve childId passed from the launching activity
+        // get childid
         childId = getIntent().getStringExtra("childId");
 
-        // Check if childId is present (crucial for database operations)
         if (childId == null) {
             Toast.makeText(this, "Child ID is missing", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        // Initialize RecyclerView components
+        // initialize RecyclerView components
         providerList = new ArrayList<>();
         adapter = new ProviderInviteAdapter(providerList, this, childId, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        // Load existing provider invites from Firestore
+        // load existing provider invites from Firestore
         loadProviderInvites();
 
-        // Set listener for the button to create a new invite code
+        // create a new invite code
         btnCreateInvite.setOnClickListener(v -> createInviteCode());
     }
 
     @Override
     public void onDeleteInvite(String inviteCode, String providerId, int position) {
-        // Check if the invite has been accepted (providerId exists)
+        // Check if the invite has been accepted
         if (providerId != null && !providerId.isEmpty()) {
             Toast.makeText(ProviderListActivity.this, "Association already established. Revoke action is blocked.", Toast.LENGTH_LONG).show();
         } else {
@@ -97,16 +96,15 @@ public class ProviderListActivity extends AppCompatActivity
     private void deleteInviteCode(String code, int position) {
         WriteBatch batch = db.batch();
 
-        // Delete the sharingSettings document
+        // delete the sharingSettings document
         batch.delete(db.collection("children")
                 .document(childId)
                 .collection("sharingSettings")
                 .document(code));
 
-        // Delete the invites metadata document
+        // delete the invites metadata document
         batch.delete(db.collection("invites").document(code));
 
-        // Commit the batch
         batch.commit()
                 .addOnSuccessListener(aVoid -> {
                     // On successful Firestore deletion, update the local list and UI
@@ -120,11 +118,10 @@ public class ProviderListActivity extends AppCompatActivity
                 });
     }
 
-    // Queries Firestore for all existing sharing settings (invites) for the current child.
     private void loadProviderInvites() {
         providerList.clear();
 
-        // Query the 'sharingSettings' subcollection under the child's document
+        // query the 'sharingSettings' subcollection under the child's document
         db.collection("children")
                 .document(childId)
                 .collection("sharingSettings")
@@ -157,13 +154,12 @@ public class ProviderListActivity extends AppCompatActivity
         String code = generateCode(8);
         WriteBatch batch = db.batch();
 
-        // Set children/{childId}/sharingSettings/{code} document (Permissions)
         Map<String, Object> sharingSettingsData = new HashMap<>();
         sharingSettingsData.put("providerId", null);
         sharingSettingsData.put("parentId", parentId);
 
 
-        // 7 detailed sharing fields, defaulting to false
+        // sharing fields, default to false
         sharingSettingsData.put("rescueLogs", false);
         sharingSettingsData.put("controllerAdherence", false);
         sharingSettingsData.put("symptoms", false);
@@ -177,12 +173,12 @@ public class ProviderListActivity extends AppCompatActivity
                 .collection("sharingSettings")
                 .document(code), sharingSettingsData);
 
-        // Set invites/{code} document
+        // invites/{code} document
         Map<String, Object> inviteMetadata = new HashMap<>();
         inviteMetadata.put("childId", childId);
         inviteMetadata.put("parentId", parentId);
 
-        // Calculate creation time and expiry time
+        // calculate creation time and expiry time
         Date now = new Date();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
@@ -192,13 +188,12 @@ public class ProviderListActivity extends AppCompatActivity
         inviteMetadata.put("createdAt", now);
         inviteMetadata.put("expiresAt", expiresAt);
 
-        // Invite status defaults to unused
+        // invite status defaults to unused
         inviteMetadata.put("used", false);
         inviteMetadata.put("usedByProviderId", null);
 
         batch.set(db.collection("invites").document(code), inviteMetadata);
 
-        // Commit the batch write to ensure both updates succeed or fail together
         batch.commit()
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Invite created: " + code, Toast.LENGTH_LONG).show();

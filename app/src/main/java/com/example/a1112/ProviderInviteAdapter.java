@@ -37,7 +37,6 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Inflate the list item layout (item_invite_provider.xml)
         View view = LayoutInflater.from(context).inflate(R.layout.item_invite_provider, parent, false);
         return new ViewHolder(view);
     }
@@ -48,10 +47,10 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
 
         boolean isAccepted = item.getProviderId() != null && !item.getProviderId().isEmpty();
 
-        // Display the invite code
+        // display the invite code
         holder.tvInviteCode.setText(item.getInviteCode() != null ? item.getInviteCode() : "-");
 
-        // Display providerId or 'Not accepted' status
+        // display providerId or 'Not accepted' status
         holder.tvProviderId.setText(isAccepted ? item.getProviderId() : "Not accepted");
 
         // Revoke Button
@@ -67,7 +66,7 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
             holder.btnRevoke.setEnabled(true);
         }
 
-        // Set listener for the Edit button (navigates to settings activity)
+        // listener for the Edit button
         holder.btnEdit.setOnClickListener(v -> {
             Intent intent = new Intent(context, ChildShareSettingsActivity.class);
             intent.putExtra("childId", childId);
@@ -75,7 +74,7 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
             context.startActivity(intent);
         });
 
-        // Set listener for the Revoke button
+        // listener for Revoke button
         holder.btnRevoke.setOnClickListener(v -> {
             if (listener != null) {
                 // Delegate the deletion request back to the Activity/Listener.
@@ -99,7 +98,7 @@ public class ProviderInviteAdapter extends RecyclerView.Adapter<ProviderInviteAd
             tvProviderId = itemView.findViewById(R.id.tvProviderEmail);
             btnEdit = itemView.findViewById(R.id.btnEdit);
 
-            btnRevoke = itemView.findViewById(R.id.btnRevoke); // Initialize the new Revoke button
+            btnRevoke = itemView.findViewById(R.id.btnRevoke);
         }
     }
 }

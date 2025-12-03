@@ -143,6 +143,7 @@ public class HistoryActivity extends AppCompatActivity {
         sixMonthsAgoCal.set(Calendar.MINUTE, 0);
         sixMonthsAgoCal.set(Calendar.SECOND, 0);
 
+        // Parse user input dates, or use defaults (6 months ago to today)
         Date startDateObj = parseDateToDate(start.isEmpty() ? new SimpleDateFormat(DATE_PATTERN, Locale.ENGLISH).format(sixMonthsAgoCal.getTime()) : start);
         Date endDateObj = parseDateToDate(end.isEmpty() ? new SimpleDateFormat(DATE_PATTERN, Locale.ENGLISH).format(todayCal.getTime()) : end);
 
@@ -161,6 +162,7 @@ public class HistoryActivity extends AppCompatActivity {
             return;
         }
 
+        // Max range limit 6 months
         Calendar sixMonthLimit = (Calendar) startCal.clone();
         sixMonthLimit.add(Calendar.MONTH, 6);
 
@@ -169,15 +171,13 @@ public class HistoryActivity extends AppCompatActivity {
             return;
         }
 
-        // Check if date range is less than three months (Minimum limit)
+        // Min range limit 3 months
         Calendar threeMonthLimit = (Calendar) startCal.clone();
         threeMonthLimit.add(Calendar.MONTH, 3);
-        // We set the time to the start of the day for accurate comparison if the difference is exactly 3 months
         endCal.set(Calendar.HOUR_OF_DAY, 0);
         endCal.set(Calendar.MINUTE, 0);
         endCal.set(Calendar.SECOND, 0);
 
-        // If the end date is before the 3-month mark, the range is too small.
         if (endCal.before(threeMonthLimit)) {
             Toast.makeText(this, "The date range must be at least three months long. Please adjust your dates.", Toast.LENGTH_LONG).show();
             return;
@@ -207,13 +207,16 @@ public class HistoryActivity extends AppCompatActivity {
             return;
         }
 
+        // Determine actual symptom keys to check
         List<String> selectedSymptoms = new ArrayList<>();
         if (!checkSymptomAny.isChecked()) {
             if (checkNightWaking.isChecked()) selectedSymptoms.add("nightWaking");
             if (checkActivityLimit.isChecked()) selectedSymptoms.add("activityLimit");
             if (checkCoughWheeze.isChecked()) selectedSymptoms.add("coughWheeze");
         }
+        List<String> symptomKeysToCheck = checkSymptomAny.isChecked() ? ALL_SYMPTOM_KEYS : selectedSymptoms;
 
+        // Determine actual trigger values to check
         List<String> selectedTriggers = new ArrayList<>();
         if (!checkTriggerAny.isChecked()) {
             if (checkExercise.isChecked()) selectedTriggers.add("exercise");
@@ -223,6 +226,7 @@ public class HistoryActivity extends AppCompatActivity {
             if (checkIllness.isChecked()) selectedTriggers.add("illness");
             if (checkOdors.isChecked()) selectedTriggers.add("odors");
         }
+        List<String> triggerValuesToCheck = checkTriggerAny.isChecked() ? ALL_TRIGGER_VALUES : selectedTriggers;
 
 
         db.collection("children")
@@ -231,9 +235,8 @@ public class HistoryActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(query -> {
                     resultsLayout.removeAllViews();
-                    loadedRecords.clear();
+                    loadedRecords.clear(); // Clear previous data
 
-                    Map<String, List<Map<String, Object>>> recordsByDate = new HashMap<>();
 
                     for (QueryDocumentSnapshot doc : query) {
                         String dateStr = doc.getString("date");
@@ -244,53 +247,54 @@ public class HistoryActivity extends AppCompatActivity {
                         if (docNum < startNum || docNum > endNum) continue;
 
                         Map<String, Object> recordData = doc.getData();
-                        recordsByDate.computeIfAbsent(dateStr, k -> new ArrayList<>()).add(recordData);
-                    }
 
-                    for (List<Map<String, Object>> recordsOfDay : recordsByDate.values()) {
-
-                        boolean dayPassesSymptomFilter = !isSymptomFilterActive;
-                        boolean dayPassesTriggerFilter = !isTriggerFilterActive;
+                        // Initialize record filter results: Passes if filter is not active
+                        boolean recordPassesSymptomFilter = !isSymptomFilterActive;
+                        boolean recordPassesTriggerFilter = !isTriggerFilterActive;
 
                         if (isSymptomFilterActive) {
-                            List<String> keysToCheck = checkSymptomAny.isChecked() ? ALL_SYMPTOM_KEYS : selectedSymptoms;
-
-                            for (Map<String, Object> record : recordsOfDay) {
-                                for (String s : keysToCheck) {
-                                    String val = (String) record.get(s);
-                                    if (val != null && !val.equalsIgnoreCase("none")) {
-                                        dayPassesSymptomFilter = true;
-                                        break;
-                                    }
+                            for (String s : symptomKeysToCheck) {
+                                String val = (String) recordData.get(s);
+                                if (val != null && !val.equalsIgnoreCase("none")) {
+                                    recordPassesSymptomFilter = true;
+                                    break;
                                 }
-                                if (dayPassesSymptomFilter) break;
                             }
                         }
 
                         if (isTriggerFilterActive) {
-                            List<String> valuesToCheck = checkTriggerAny.isChecked() ? ALL_TRIGGER_VALUES : selectedTriggers;
 
-                            for (Map<String, Object> record : recordsOfDay) {
-                                List<String> triggers = (List<String>) record.get("triggers");
-                                if (triggers != null) {
-                                    for (String t : valuesToCheck) {
-                                        if (triggers.contains(t)) {
-                                            dayPassesTriggerFilter = true;
-                                            break;
-                                        }
+                            Object triggersObject = recordData.get("triggers");
+                            List<String> triggers = null;
+
+                            if (triggersObject instanceof List) {
+                                try {
+                                    // Attempt runtime cast, handles List<Object> containing Strings
+                                    triggers = (List<String>) triggersObject;
+                                } catch (ClassCastException e) {
+                                    // Failed to cast, likely mixed types in DB array
+                                    triggers = null;
+                                }
+                            }
+
+                            if (triggers != null) {
+                                for (String t : triggerValuesToCheck) {
+                                    if (triggers.contains(t)) {
+                                        recordPassesTriggerFilter = true; // Match found
+                                        break;
                                     }
                                 }
-                                if (dayPassesTriggerFilter) break;
                             }
                         }
 
-                        if (dayPassesSymptomFilter && dayPassesTriggerFilter) {
-                            loadedRecords.addAll(recordsOfDay);
+                        if (recordPassesSymptomFilter && recordPassesTriggerFilter) {
+                            loadedRecords.add(recordData);
                         }
                     }
 
+
+                    // Sorting: Sort by date descending (newest first)
                     Collections.sort(loadedRecords, (r1, r2) -> {
-                        // Get date strings
                         String dateStr1 = (String) r1.get("date");
                         String dateStr2 = (String) r2.get("date");
 
@@ -298,7 +302,6 @@ public class HistoryActivity extends AppCompatActivity {
                         if (dateStr1 == null) return 1;
                         if (dateStr2 == null) return -1;
 
-                        // Parse date strings into Date objects for comparison
                         Date date1 = parseDateToDate(dateStr1);
                         Date date2 = parseDateToDate(dateStr2);
 
@@ -306,7 +309,6 @@ public class HistoryActivity extends AppCompatActivity {
                         if (date1 == null) return 1;
                         if (date2 == null) return -1;
 
-                        // Compare Dates (Descending order: newest first)
                         return date2.compareTo(date1);
                     });
 
@@ -314,7 +316,6 @@ public class HistoryActivity extends AppCompatActivity {
                     for (Map<String, Object> record : loadedRecords) {
                         addRecordView(record);
                     }
-
 
                     Toast.makeText(this, "Loaded " + loadedRecords.size() + " records", Toast.LENGTH_SHORT).show();
                 })

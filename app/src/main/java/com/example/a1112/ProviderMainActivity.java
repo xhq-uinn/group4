@@ -173,7 +173,7 @@ public class ProviderMainActivity extends AppCompatActivity {
         }
     }
 
-    //load the childs last 25 rescueLogs
+    //load the child's last 25 rescueLogs
     private void loadRescueLogs() {
         db.collection("medicineLogs")
                 .whereEqualTo("childId", childId)
