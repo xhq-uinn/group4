@@ -19,7 +19,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     private EditText emailField, passwordField;
     private EditText childNameField, childAgeField;
-    private EditText childUsernameField, childPasswordField;   // <-- NEW
+    private EditText childUsernameField, childPasswordField;   //child username & password
 
     private RadioGroup roleGroup;
     private LinearLayout childFields;
@@ -38,8 +38,8 @@ public class SignUpActivity extends AppCompatActivity {
         childNameField = findViewById(R.id.childNameField);
         childAgeField = findViewById(R.id.childAgeField);
 
-        childUsernameField = findViewById(R.id.childUsernameField);  // <-- NEW
-        childPasswordField = findViewById(R.id.childPasswordField);  // <-- NEW
+        childUsernameField = findViewById(R.id.childUsernameField);
+        childPasswordField = findViewById(R.id.childPasswordField);
 
         roleGroup = findViewById(R.id.roleGroup);
         childFields = findViewById(R.id.childFields);
@@ -47,7 +47,7 @@ public class SignUpActivity extends AppCompatActivity {
         registerButton = findViewById(R.id.registerButton);
 
         roleGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.roleParent || checkedId == R.id.roleChild) {
+            if (checkedId == R.id.roleParent) {
                 childFields.setVisibility(View.VISIBLE);
             } else {
                 childFields.setVisibility(View.GONE);
