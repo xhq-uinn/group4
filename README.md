@@ -1,7 +1,8 @@
 # SmartAir – Asthma Support App
 
-SmartAir is an Android application designed to support children with asthma, their parents, and healthcare providers.  
-The app enables symptom tracking, medication logging, triage assistance, and parent-controlled data sharing, following the official requirements from R1–R6 of the CSCB07 course project.
+SMART AIR is a kid-friendly Android app that helps children (ages 6–16) understand
+asthma, practice good inhaler technique, log symptoms/medicine use, and share
+parent-approved information with a healthcare provider via a concise, exportable report.
 
 This project was developed as part of CSCB07 – Software Design (Fall 2025) at the University of Toronto Scarborough.
 
@@ -185,40 +186,46 @@ Provides at-a-glance status for parents and a provider-ready summary.
 
 ---
 
-# 5. Assumptions *to be added
+# 5. Assumptions
 
 - Parent may have multiple children, but each child can only have 1 parent
+
 - Invite code cannot be revoked after provider accepts invitation
+
 - PEF and PB are manually entered
+
 - Motivation streaks: a streak day counts when the user takes exactly the planned amount of controller medication for that day.
+
 - Each day can have only one Daily Check-in in total. Thus, the Daily Check-in data will never conflict, regardless of who submits it.
+
 - A Planned Controller Day is considered completed only when the child takes exactly the number of controller doses specified in their parent’s controller schedule for that day.
   Taking fewer or more than the scheduled doses does not count as a completed day.
+
 - A Technique Completed Day contributes to the technique streak only if the child is scheduled to take controller medication on that day.
   If the controller schedule for that day is 0, then: (1) The child is not required to complete a technique session, and (2) The technique streak remains unchanged.
+
 - Both controller streaks and technique streaks are calculated using Schedule Days, not natural calendar days.
   Only days where the parent has scheduled a controller dose are considered when determining whether a streak should increase or break.
+
 - A High Quality Technique Session is counted when the technique session is explicitly marked as "high-quality".
   The total number of such sessions is accumulated across all history.
   If the accumulated count meets or exceeds the parent-configured threshold, the child earns the High Quality Technique badge.
 
 ---
 
-# 6. Sample Credentials (for testing)
-
-Replace with real test accounts if needed.
+# 6. Sample Credentials (for TA grading)
 
 ### Parent
-Email: `parent@test.com`  
-Password: `123456`
+Email: `doraz000@163.com`  
+Password: `sample`
 
 ### Provider
-Email: `provider@test.com`  
-Password: `123456`
+Email: `sample@pro.com `  
+Password: `sample`
 
 ### Child
-Username: `kidUser`  
-Password: `kidPass`
+Username: `sample`  
+Password: `sample`
 
 ---
 
@@ -252,17 +259,18 @@ No tests were written for other modules.
 
 # 9. Scrum Process Summary
 
-- 3 sprints - 
+- 3 sprints
 - sprint 1: R1, R2
-- sprint 2: R3, R4, R5, R6 
-- sprint 3: final revision and testing
+- sprint 2: R3, R4, R5
+- sprint 3: R6, final revision and testing
 - Jira used for backlog & story points
--  Standups documented: 3 each week
+- Standups documented: 3 each week
 - Team agreement submitted
 
 ---
 
-# 10. Team Members (Alphabetical by Last Name)
+
+# 11. Team Members (Alphabetical by Last Name)
 
 - Adam Belquas
 - Lemeng Wang
