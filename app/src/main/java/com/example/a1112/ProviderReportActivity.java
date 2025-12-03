@@ -65,6 +65,7 @@ public class ProviderReportActivity extends AppCompatActivity {
     private String childId;
     private String childName;
 
+    //default report timeframe
     private int reportPeriodMonths = -3;
 
     // store list of shared providers with their provider IDs and emails
@@ -76,6 +77,7 @@ public class ProviderReportActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_provider_report);
 
+        //get necessary data from intent
         childId = getIntent().getStringExtra("CHILD_ID");
         childName = getIntent().getStringExtra("CHILD_NAME");
 
@@ -112,6 +114,7 @@ public class ProviderReportActivity extends AppCompatActivity {
     //set up a spinner to choose last x months to be viewed and update the report
     private void setupTimePeriodSpinner() {
 
+        //setup spinner with 3-6 month range for options
         String[] timePeriods = {"3 months", "4 months", "5 months", "6 months"};
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -263,6 +266,7 @@ public class ProviderReportActivity extends AppCompatActivity {
 
     //get all controller logs and planned controller days within the given last months to now and calculate the adherence percentage
     private void displayControllerAdherence() {
+        //get controller schedule from child
         db.collection("controllerSchedules")
                 .document(childId)
                 .get()
@@ -273,10 +277,12 @@ public class ProviderReportActivity extends AppCompatActivity {
                     }
                     Map<String, Object> schedule = result.getData();
 
+
                     Calendar cal = Calendar.getInstance();
                     cal.add(Calendar.MONTH, reportPeriodMonths);
                     Date startDate = cal.getTime();
 
+                    //get all controller logs in the time frame
                     db.collection("medicineLogs")
                             .whereEqualTo("childId", childId)
                             .whereEqualTo("type", "controller")
@@ -386,6 +392,7 @@ public class ProviderReportActivity extends AppCompatActivity {
                                 String dayString = dateFormat.format(createdAt);
                                 allCheckinDays.add(dayString);
 
+                                //check for symptoms regardless of severity
                                 String activityLimit = doc.getString("activityLimit");
                                 String nightWaking = doc.getString("nightWaking");
                                 String coughWheeze = doc.getString("coughWheeze");
@@ -397,6 +404,7 @@ public class ProviderReportActivity extends AppCompatActivity {
                             }
                         }
                     }
+                    //get days with symptoms from list after iterating over all dailycheckins and calculate days without
                     int daysWithSymptoms = symptomDays.size();
                     int daysWithoutSymptoms = allCheckinDays.size() - daysWithSymptoms;
 
@@ -494,6 +502,8 @@ public class ProviderReportActivity extends AppCompatActivity {
                                     String guidance = doc.getString("guidance");
                                     List<String> flags = (List<String>) doc.get("flags");
 
+                                    //add guidance, flag messages and timestamp to text display if theye exist
+
                                     StringBuilder incidentText = new StringBuilder();
                                     incidentText.append(timestamp != null ? dateFormat.format(timestamp) : "Unknown date");
 
@@ -527,7 +537,7 @@ public class ProviderReportActivity extends AppCompatActivity {
                 });
     }
 
-    // hide all triage incident views when sharing is disabled
+    // hides all triage incident views when sharing is disabled
     private void hideTriageIncidents() {
         triageIncidentsContainer.setVisibility(View.GONE);
         noTriageDataText.setVisibility(View.VISIBLE);
@@ -598,6 +608,7 @@ public class ProviderReportActivity extends AppCompatActivity {
         //display sample point circles differently or not at all based on number of entries for better visibility
         if (entries.size() > 50) {
             dataSet.setCircleRadius(2f);
+            //no circles at all if over 100 entries just so it doesnt fill screen
             dataSet.setDrawCircles(entries.size() <= 100);
             dataSet.setDrawCircleHole(false);
         } else if (entries.size() > 20) {

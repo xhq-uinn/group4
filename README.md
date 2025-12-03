@@ -3,7 +3,7 @@
 SmartAir is an Android application designed to support children with asthma, their parents, and healthcare providers.  
 The app enables symptom tracking, medication logging, triage assistance, and parent-controlled data sharing, following the official requirements from R1–R6 of the CSCB07 course project.
 
-This project was developed as part of SCB07 – Software Design (Fall 2025) at the University of Toronto Scarborough.
+This project was developed as part of CSCB07 – Software Design (Fall 2025) at the University of Toronto Scarborough.
 
 ---
 
@@ -191,6 +191,16 @@ Provides at-a-glance status for parents and a provider-ready summary.
 - Invite code cannot be revoked after provider accepts invitation
 - PEF and PB are manually entered
 - Motivation streaks: a streak day counts when the user takes exactly the planned amount of controller medication for that day.
+- Each day can have only one Daily Check-in in total. Thus, the Daily Check-in data will never conflict, regardless of who submits it.
+- A Planned Controller Day is considered completed only when the child takes exactly the number of controller doses specified in their parent’s controller schedule for that day.
+  Taking fewer or more than the scheduled doses does not count as a completed day.
+- A Technique Completed Day contributes to the technique streak only if the child is scheduled to take controller medication on that day.
+  If the controller schedule for that day is 0, then: (1) The child is not required to complete a technique session, and (2) The technique streak remains unchanged.
+- Both controller streaks and technique streaks are calculated using Schedule Days, not natural calendar days.
+  Only days where the parent has scheduled a controller dose are considered when determining whether a streak should increase or break.
+- A High Quality Technique Session is counted when the technique session is explicitly marked as "high-quality".
+  The total number of such sessions is accumulated across all history.
+  If the accumulated count meets or exceeds the parent-configured threshold, the child earns the High Quality Technique badge.
 
 ---
 

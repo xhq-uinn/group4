@@ -20,7 +20,6 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = "ChildShareSettings";
 
-    // cbPermissionEnabled is REMOVED from the fields list.
     private CheckBox cbRescueLogs, cbController, cbSymptoms, cbTriggers,
             cbPeakFlow, cbTriage, cbSummary; // Detailed, granular sharing options
 
@@ -50,7 +49,6 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         // Initialize CheckBox views from the layout
-        // NOTE: cbPermissionEnabled initialization removed here.
         cbRescueLogs = findViewById(R.id.cbRescueLogs);
         cbController = findViewById(R.id.cbController);
         cbSymptoms = findViewById(R.id.cbSymptoms);
@@ -71,10 +69,6 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
                 .document(inviteCode);
 
         docRef.get().addOnSuccessListener(snapshot -> {
-            // Document does not exist (new setup) OR Document exists (existing setup)
-            // In both cases, default unchecked/false if the field is missing.
-
-            // Load and set the state of the 7 detailed CheckBoxes
 
             // Rescue logs
             boolean rescueLogsChecked = Boolean.TRUE.equals(snapshot.getBoolean("rescueLogs"));
@@ -111,11 +105,9 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
             setCheckboxText(cbSummary, "Summary charts", summaryChecked);
             cbSummary.setChecked(summaryChecked);
 
-            // NOTE: setDetailedPermissionEnabled() method is now removed, as permissions are always enabled.
         });
     }
 
-    // NOTE: setDetailedPermissionEnabled() method is removed.
 
     private void setCheckboxText(CheckBox cb, String baseText, boolean isChecked) {
         if (isChecked) {
@@ -165,8 +157,6 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
             }
         };
 
-        // NOTE: Specific listener for cbPermissionEnabled is removed.
-        // NOTE: All helper methods for managing listeners are removed.
 
         // Attach the general Firestore update and text update listener to the 7 detailed CheckBoxes
         cbRescueLogs.setOnCheckedChangeListener(generalListener);
@@ -177,8 +167,6 @@ public class ChildShareSettingsActivity extends AppCompatActivity {
         cbTriage.setOnCheckedChangeListener(generalListener);
         cbSummary.setOnCheckedChangeListener(generalListener);
     }
-
-    // NOTE: Helper methods (removeDetailedListeners, attachDetailedListeners, setDetailedCheckboxes, updateAllDetailedFields) are REMOVED.
 
     private void updateSharingField(String field, boolean value) {
         Map<String, Object> update = new HashMap<>();
